@@ -11,7 +11,7 @@
 
 Las rutas de los modelos se conservan **exactamente como vienen del pack de origen**. Un `.mdl`
 referencia sus materiales por la ruta que tenía al compilarse (`cdmaterials`): re-namespacear
-`models/stalker/…` a `models/corpus_stalker/…` exigiría **recompilar los 151 modelos**. No se toca.
+`models/stalker/…` a `models/corpus_stalker/…` exigiría **recompilar los 152 modelos**. No se toca.
 
 Consecuencia: si un pack de origen está montado a la vez que este addon, los archivos coinciden en
 ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, gana el último montado
@@ -19,9 +19,9 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 
 ---
 
-## 1. Lo que el addon tiene hoy (245 MB, 1.508 archivos)
+## 1. Lo que el addon tiene hoy (245 MB, 1.516 archivos)
 
-### 1.1 Modelos — 151 `.mdl`
+### 1.1 Modelos — 152 `.mdl`
 
 | Ruta en el addon | `.mdl` | Qué es | Pack de origen |
 |---|---|---|---|
@@ -30,7 +30,7 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 | `models/stalker/item/handhelds/` | 11 | `pda`, `mini_pda`, `radio`, `decoder`, `datachik1-3`, `files1-4` | ídem |
 | `models/stalker/ammo/` | 16 | cajas por calibre (`545x39`, `762x54`, `9x39`, `12x70`, `gauss`…) | ídem |
 | `models/stalker/outfit/` | 32 | trajes por facción, como prop | ídem |
-| `models/hgn/srp/items/`, `models/zavod_yantar/`, `models/flyboi/hind/`, `models/raviool/`, `models/jerry/mutants/`, `models/` (raíz, 34) | 43 | props varios de la Zona | ídem |
+| `models/hgn/srp/items/` (6), `models/zavod_yantar/` (3), `models/flyboi/hind/` (3), `models/raviool/` (1), `models/jerry/mutants/` (1), `models/` (raíz, 34) | 48 | props varios de la Zona | ídem |
 | `models/player/seva/` (21), `models/player/bandit/` (7) | 28 | playermodels | `zona stalkerrp content` (WS `300746843`) |
 | `models/arms/` | 1 | `c_arms_stalker` (brazos first-person) | ídem |
 | `models/rashkinsk/` | 1 | `sidor` — **Sidorovich**, el trader. Rig **ValveBiped con los includes de animación del ciudadano HL2** (`male_shared`/`gestures`/`postures`): un `anim` entity le corre las secuencias de siempre. Material único: `act_stalker_trader_1` | `stalker rp  content #2` |
@@ -39,7 +39,7 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 > **también los trae `stalker rp  content #1`, byte-idénticos**. Si ese pack está montado, los
 > consumidores resuelven igual sin este addon.
 
-### 1.2 Materiales — 532 archivos
+### 1.2 Materiales — 536 archivos
 
 `materials/models/stalkertnb/{humans,mutants,zomb}`, `materials/models/stalkertextures/{item,loner,
 freedom,bandit,dolg,clearsky}`, `materials/models/hgn/srp/items`, `materials/models/zavod_yantar` y
