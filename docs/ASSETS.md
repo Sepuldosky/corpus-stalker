@@ -33,6 +33,7 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 | `models/hgn/srp/items/`, `models/zavod_yantar/`, `models/flyboi/hind/`, `models/raviool/`, `models/jerry/mutants/`, `models/` (raíz, 34) | 43 | props varios de la Zona | ídem |
 | `models/player/seva/` (21), `models/player/bandit/` (7) | 28 | playermodels | `zona stalkerrp content` (WS `300746843`) |
 | `models/arms/` | 1 | `c_arms_stalker` (brazos first-person) | ídem |
+| `models/rashkinsk/` | 1 | `sidor` — **Sidorovich**, el trader. Rig **ValveBiped con los includes de animación del ciudadano HL2** (`male_shared`/`gestures`/`postures`): un `anim` entity le corre las secuencias de siempre. Material único: `act_stalker_trader_1` | `stalker rp  content #2` |
 
 > **Importante:** los 43 modelos de `models/stalker/item/*` + `ammo/` + `raviool/flashlight`
 > **también los trae `stalker rp  content #1`, byte-idénticos**. Si ese pack está montado, los
@@ -76,6 +77,11 @@ cp -r "$DEV/zona stalker props/materials"/*   "$ADDON/materials/"
 # Playermodels + brazos
 cp -r "$DEV/zona stalkerrp content/models"/*    "$ADDON/models/"
 cp -r "$DEV/zona stalkerrp content/materials"/* "$ADDON/materials/"
+
+# Sidorovich (el trader demo de Cargo lo usa si está montado; si no, cae al ciudadano de HL2)
+mkdir -p "$ADDON/models/rashkinsk" "$ADDON/materials/models/rashkinsk/sidor"
+cp "$DEV/stalker rp  content #2/models/rashkinsk/sidor."*             "$ADDON/models/rashkinsk/"
+cp "$DEV/stalker rp  content #2/materials/models/rashkinsk/sidor/"*   "$ADDON/materials/models/rashkinsk/sidor/"
 
 # Los 4 sonidos de Craving (rutas verbatim, no renombrar)
 mkdir -p "$ADDON/sound/zona/stalkerrp/actions/interface"
