@@ -1,0 +1,23 @@
+# === Assets: NO se versionan ===
+#
+# Los modelos, texturas, sonidos y partículas de este addon son ports de
+# S.T.A.L.K.E.R. (propiedad de GSC Game World) compilados por terceros. La licencia
+# MIT de este repo cubre SOLO el código de lua/ y los docs — nunca los assets.
+# Subirlos a un repo público sería redistribuirlos, y git guarda binarios de pena
+# (cada recompilación de un .mdl queda en el historial para siempre).
+#
+# Son re-derivables: docs/ASSETS.md dice qué pack provee cada ruta y cómo
+# reconstruir el árbol desde dev/other/.
+
+models/
+materials/
+sound/
+particles/
+resource/
+maps/
+
+# === Ruido ===
+*.gma
+*.log
+Thumbs.db
+desktop.ini
