@@ -10,9 +10,10 @@ nada de S.T.A.L.K.E.R. **Este addon es la capa que lo convierte en la Zona.** Aq
 del universo: anomalías, artefactos, PDA, detectores, defs de NPC para CortexBase, defs de ítem,
 playermodels y facciones.
 
-**Regla cardinal:** este addon es un **consumidor**, nunca un proveedor. Hard-depende de Corpus y
-detecta los módulos en runtime (`Corpus.GetModule` / `Corpus.HasModule`, nunca asumir). **Nada de lo
-que vive aquí sube al framework ni a un módulo** — Corpus es delgado y no contiene lógica de dominio;
+**Regla cardinal (STK-1):** este addon es un **consumidor**, nunca un proveedor. Hard-depende de Corpus
+y detecta los módulos en runtime (`Corpus.GetModule` / `Corpus.HasModule`, nunca asumir — COR-5). **Nada
+de lo que vive aquí sube al framework ni a un módulo** — Corpus es delgado y no contiene lógica de dominio
+(COR-10);
 los módulos son genéricos y no contienen contenido de un juego concreto. Si algo de aquí "necesita"
 subir, la respuesta casi siempre es exponer un punto de extensión en el módulo, no mover el contenido.
 
@@ -34,34 +35,48 @@ pero no escritas**.
 
 ## Assets: no se versionan
 
-`models/`, `materials/`, `sound/`, `particles/`, `resource/` están en `.gitignore`. Son ports de
-S.T.A.L.K.E.R. propiedad de **GSC Game World**: la MIT de este repo cubre el código, no los assets.
-No los añadas al repo, ni siquiera con `git add -f`.
+**STK-2 — Los assets no se versionan.** `models/`, `materials/`, `sound/`, `particles/`, `resource/`
+están en `.gitignore`. Son ports de S.T.A.L.K.E.R. propiedad de **GSC Game World**: la MIT de este repo
+cubre el código, no los assets. No los añadas al repo, ni siquiera con `git add -f`.
 
-**Rutas verbatim:** los `.mdl` referencian sus materiales por ruta compilada (`cdmaterials`).
-Re-namespacear exigiría recompilar. No se toca ninguna ruta de modelo.
+**Rutas verbatim (STK-3, sede en [`docs/ASSETS.md`](docs/ASSETS.md)):** los `.mdl` referencian sus
+materiales por ruta compilada (`cdmaterials`). Re-namespacear exigiría recompilar. No se toca ninguna
+ruta de modelo.
+
+**STK-8 — Política de assets de terceros:** crédito completo al autor original de cada port, y
+retiro inmediato si un titular lo pide. El README público la enuncia en lenguaje de visitante;
+la sede normativa es esta línea.
 
 ## Contratos que no debes romper
 
-1. **Detección, nunca asunción.** Ningún archivo asume que Corpus u otro módulo ya cargó. Lazy check
-   (`Corpus.GetModule`) o `Corpus.OnReady` para wiring que corre una vez.
-2. **Prefijo de archivo:** `corpus_stalker_*.lua` en `lua/autorun/...`, para no colisionar con los
-   seis addons hermanos montados a la vez.
-3. **Defs contra Cargo: en ambos realms.** Las defs **y** sus `onUse` van en `shared` — la UI exige
-   `isfunction(onUse)` client-side, aunque la closure solo corra en server. Ya lo pagaron Craving y
-   Coagulant.
-4. **Persistencia y net namespaced** vía las primitivas de Corpus (`Corpus.Data`, `Corpus.Net`), nunca
-   `net.Receive` con nombres crudos.
-5. **No copiar el código de los packs de referencia.** Está roto y es peligroso (monkeypatch global de
-   `engine.IsMounted`, hook que anula las explosiones de todo el servidor, `net.ReadTable()` sin
-   validar admin, artefactos que no hacen nada). Se reescribe. Ver `dev/stalker_rp_packs_mapa.md` §5.
-6. **Nombres de clase de entidad prefijados.** Los packs de origen usan `blood`, `fire`, `teleport`,
-   `control`… — colisión garantizada. Aquí van como `corpus_stalker_<cosa>`.
+Los cuatro primeros **citan** normas del framework — su sede es `corpus/`, no acá; se repiten
+porque son las que este addon rompe más fácil. Los dos últimos sí son propios de la Zona.
 
-## Idioma
+1. **COR-5 — Detección, nunca asunción.** Ningún archivo asume que Corpus u otro módulo ya cargó. Lazy
+   check (`Corpus.GetModule`) o `Corpus.OnReady` para wiring que corre una vez.
+2. **COR-6 — Prefijo de archivo:** `corpus_stalker_*.lua`, para no colisionar con los seis addons
+   hermanos montados a la vez.
+3. **COR-12 — Defs contra Cargo: en ambos realms.** Las defs **y** sus `onUse` van en `shared` — la UI
+   exige `isfunction(onUse)` client-side, aunque la closure solo corra en server. Ya lo pagaron Craving
+   y Coagulant. Sede con la causa completa: `corpus/docs/CORPUS_Architecture.md` §5.
+4. **COR-3 / COR-4 — Persistencia y net namespaced** vía las primitivas de Corpus (`Corpus.Data`,
+   `Corpus.Net`), nunca `net.Receive` con nombres crudos.
+5. **STK-4 — No copiar el código de los packs de referencia.** Está roto y es peligroso (monkeypatch
+   global de `engine.IsMounted`, hook que anula las explosiones de todo el servidor, `net.ReadTable()`
+   sin validar admin, artefactos que no hacen nada). Se reescribe. Ver `dev/stalker_rp_packs_mapa.md` §5.
+6. **STK-5 — Nombres de clase de entidad prefijados.** Los packs de origen usan `blood`, `fire`,
+   `teleport`, `control`… — colisión garantizada. Aquí van como `corpus_stalker_<cosa>`.
+
+## Idioma y commits
 
 Comentarios y mensajes de commit en **español**; los `<tipo>` de commit en inglés. Convenciones:
-`../corpus/docs/corpus_convenciones_commits.txt`.
+`../corpus/docs/corpus_convenciones_commits.txt` — de ahí se heredan las secciones **0/1/2/4/5**
+(estructura, tipos, formato). **Su §3 (alcances) NO aplica acá**: es el mapa de archivos del
+framework (GIT-6 — la §3 es por repo). Mientras este repo no tenga su propio
+`docs/stalker_convenciones_commits.txt` (nace cuando el árbol de código crezca), su tabla de
+alcances vive en esta línea: `assets`, `repo`, `docs`, y a futuro `anomalias`, `artefactos`,
+`pda`, `detectores`, `npc`, `items`, `models`. Los tres commits existentes (`docs(assets)`,
+`docs(docs)`, `chore(repo)`) ya son conformes.
 
 ## Verificación
 
@@ -70,6 +85,7 @@ la pasada en juego. Ver `corpus_flujo_trabajo.txt` §1 (Paso 4).
 
 ## Git
 
-Repo publicado en GitHub (`github.com/Sepuldosky/corpus-stalker`, público). **No hagas push salvo que
-se pida explícitamente.** **No agregues el trailer `Co-Authored-By: Claude`** ni ninguna atribución de
+Repo publicado en GitHub (`github.com/Sepuldosky/corpus-stalker`, público). **No hagas commit ni push
+salvo que se pida explícitamente** (política unificada del ecosistema — cita GIT-7; voto del autor
+2026-07-19). **No agregues el trailer `Co-Authored-By: Claude`** ni ninguna atribución de
 co-autoría a Claude/Anthropic en los commits.

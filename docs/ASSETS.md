@@ -7,7 +7,7 @@
 > Los packs viven en `dev/other/` (fuera de todo repo git, no publicado). Su inventario completo, con
 > conteos y trampas, está en **`dev/stalker_rp_packs_mapa.md`** y **`dev/zona_stalkerrp_contenido.md`**.
 
-## Regla de oro: rutas verbatim
+## STK-3 — Regla de oro: rutas verbatim
 
 Las rutas de los modelos se conservan **exactamente como vienen del pack de origen**. Un `.mdl`
 referencia sus materiales por la ruta que tenía al compilarse (`cdmaterials`): re-namespacear
@@ -54,8 +54,9 @@ freedom,bandit,dolg,clearsky}`, `materials/models/hgn/srp/items`, `materials/mod
 | `sound/zona/stalkerrp/actions/interface/inv_softdrink.ogg` | Craving (`can`) | ídem |
 | `sound/zona/stalkerrp/hunger.mp3` | Craving (`STOMACH`, sin fallback) | ídem |
 
-> **Trampa de selección ya pagada:** los `actions/eat1-5.mp3` del pack son **tragos**, no masticado.
-> El sonido de comer es `interface/inv_food.ogg`. El nombre del archivo miente: validar por oído.
+> **STK-7 — Trampa de selección ya pagada:** los `actions/eat1-5.mp3` del pack son **tragos**, no
+> masticado. El sonido de comer es `interface/inv_food.ogg`. El nombre del archivo miente: validar
+> por oído.
 >
 > **Estos 4 sonidos son la única razón dura por la que Craving necesita este addon montado** — sus
 > modelos ya vienen en `content #1`. Sin el addon, Craving cae a sonidos de HL2 (suena a barnacle).
@@ -91,8 +92,8 @@ cp "$DEV/zona stalker actionsounds/sound/zona/stalkerrp/actions/interface/inv_so
 cp "$DEV/zona stalker actionsounds/sound/zona/stalkerrp/hunger.mp3"                          "$ADDON/sound/zona/stalkerrp/"
 ```
 
-**Al referenciar un sonido ZONA nuevo desde cualquier módulo, copiarlo también aquí** — el addon nació
-sin `sound/` y los `zona/stalkerrp/*` sonaban solo porque el pack de Workshop estaba montado aparte.
+**STK-6 — Al referenciar un sonido ZONA nuevo desde cualquier módulo, copiarlo también aquí** — el addon
+nació sin `sound/` y los `zona/stalkerrp/*` sonaban solo porque el pack de Workshop estaba montado aparte.
 
 ---
 
