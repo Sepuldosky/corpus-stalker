@@ -25,6 +25,9 @@ pero no escritas**.
 
 ## Docs — jerarquía de lectura
 
+0. **Arquitectura del addon** → [`docs/STALKER_Arquitectura.md`](docs/STALKER_Arquitectura.md).
+   Alcance, frontera, mapa de consumo por módulo y régimen de assets. **Léelo antes de escribir
+   contenido nuevo** — dice contra qué se apoya cada dominio y qué pasa si el módulo no está.
 1. **Assets** → [`docs/ASSETS.md`](docs/ASSETS.md). Qué hay, de qué pack sale cada ruta, cómo
    reconstruir el árbol. **Los assets NO están en el repo** (ver abajo).
 2. **Inventario de los packs de origen** (no publicado, en `dev/`) → `dev/stalker_rp_packs_mapa.md`
@@ -32,6 +35,8 @@ pero no escritas**.
    `dev/zona_stalkerrp_contenido.md` (packs ZONA de 2014). **Leerlos antes de copiar un solo asset.**
 3. **Metodología** → `../corpus/docs/corpus_flujo_trabajo.txt` (doc canónico de todo el ecosistema).
 4. **El framework** → `../corpus/docs/CORPUS_Architecture.md` (§3 API, §6 detección en runtime).
+5. **Convenciones de commit** → [`docs/stalker_convenciones_commits.txt`](docs/stalker_convenciones_commits.txt).
+   Alcances específicos de **este** repo (STK-9).
 
 ## Assets: no se versionan
 
@@ -70,13 +75,15 @@ porque son las que este addon rompe más fácil. Los dos últimos sí son propio
 ## Idioma y commits
 
 Comentarios y mensajes de commit en **español**; los `<tipo>` de commit en inglés. Convenciones:
-`../corpus/docs/corpus_convenciones_commits.txt` — de ahí se heredan las secciones **0/1/2/4/5**
-(estructura, tipos, formato). **Su §3 (alcances) NO aplica acá**: es el mapa de archivos del
-framework (GIT-6 — la §3 es por repo). Mientras este repo no tenga su propio
-`docs/stalker_convenciones_commits.txt` (nace cuando el árbol de código crezca), su tabla de
-alcances vive en esta línea: `assets`, `repo`, `docs`, y a futuro `anomalias`, `artefactos`,
-`pda`, `detectores`, `npc`, `items`, `models`. Los tres commits existentes (`docs(assets)`,
-`docs(docs)`, `chore(repo)`) ya son conformes.
+[`docs/stalker_convenciones_commits.txt`](docs/stalker_convenciones_commits.txt) — **el doc manda**;
+de él salen los alcances de este repo (**STK-9**, §3). Las secciones **0/1/2/4/5** (estructura,
+tipos, formato) se heredan de `../corpus/docs/corpus_convenciones_commits.txt`; **su §3 NO aplica
+acá**, es el mapa de primitivas del framework (GIT-6 — la §3 es por repo).
+
+Alcances **en uso**: `assets`, `repo`, `docs`. **Reservados** hasta que su contenido se escriba:
+`anomalias`, `artefactos`, `pda`, `detectores`, `npc`, `items`, `models`. Los tres commits
+existentes (`docs(assets)`, `docs(docs)`, `chore(repo)`) ya son conformes. `chore` es un **tipo**,
+no un alcance.
 
 ## Verificación
 

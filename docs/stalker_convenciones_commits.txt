@@ -1,0 +1,172 @@
+CORPUS S.T.A.L.K.E.R. — CONVENCIONES DE GIT COMMITS (repo: corpus-stalker/,
+el addon de contenido de la Zona)
+Guía de estandarización para el historial de cambios de este repositorio
+=====================================================
+Documento vivo — actualizaciones según evolución del flujo.
+Basado en las convenciones de KONTROL, portadas vía ADS 2.0 y Corpus, adaptado al
+stack GLua / Garry's Mod y al alcance de este addon como CONSUMIDOR PURO.
+
+Este doc cubre SOLO el repo corpus-stalker/. La estructura (secciones 0, 1, 2, 4, 5)
+es idéntica a corpus/docs/corpus_convenciones_commits.txt y se HEREDA de ahí; solo la
+sección 3 (alcances) es propia, porque depende del mapa de contenido de este repo.
+
+POR QUÉ EXISTE ESTE ARCHIVO (2026-07-19, deuda D-13 / hueco H5 del COMPLETO):
+hasta hoy este repo era el único de las siete raíces sin doc de convenciones, y su
+tabla de alcances vivía INTERINAMENTE en una línea del CLAUDE.md. Eso funcionó
+mientras hubo tres commits; deja de funcionar en cuanto el árbol de código crezca.
+Antes de eso, el repo citaba las convenciones del framework ENTERAS mientras su §3
+lo excluía explícitamente — el hallazgo 2.16 del COMPLETO. Formalizar la tabla acá
+cierra las dos mitades del problema.
+=====================================================
+
+
+0. PROPÓSITO Y AUDIENCIA
+--------------------------
+
+Este documento establece las reglas y la estructura obligatoria para la redacción de
+mensajes de commit en el repositorio de CORPUS S.T.A.L.K.E.R. (addon de contenido).
+Su objetivo es mantener un historial limpio, legible y automatizable.
+
+Aplica de forma estricta a todo commit confirmado en este repositorio,
+independientemente de quién o qué lo origine.
+
+Ojo con la naturaleza de este repo: NO es un módulo. Los cinco módulos
+(cortex/caliber/coagulant/craving/cargo) son genéricos; este addon es la capa de
+CONTENIDO que los convierte en la Zona (STK-1). Eso se refleja en los alcances de
+§3: acá no hay "inventory" ni "armor" — hay anomalías, artefactos y defs.
+
+
+1. ESTRUCTURA OBLIGATORIA DEL MENSAJE
+---------------------------------------
+
+Cita GIT-1 (sede: corpus/docs/corpus_convenciones_commits.txt §1). Todo commit DEBE
+seguir el estándar de Conventional Commits adaptado al proyecto:
+
+  <tipo>(<alcance>): <descripción corta>
+
+Los tipos van en inglés (ver sección 2). La descripción y el cuerpo opcional del
+commit van en español.
+
+Reglas críticas de formato (cita GIT-2):
+- NUNCA empezar la descripción con mayúscula.
+- NUNCA incluir un punto (.) al final de la descripción.
+- Usar el tiempo presente imperativo (ej: "añade" en lugar de "añadido").
+
+
+2. TIPOS DE COMMIT PERMITIDOS (<tipo>)
+----------------------------------------
+
+Cita GIT-3. Se prohíben términos genéricos como "cambios", "fix" a secas o "tarea".
+Los tipos válidos son los seis del ecosistema:
+
+  feat:
+    Contenido nuevo de la Zona (una anomalía, un artefacto, una def de NPC, una
+    entidad, un detector).
+
+  fix:
+    Corrección de un error o bug activo en el código Lua o en una def.
+
+  refactor:
+    Modificaciones en el código Lua que no añaden contenido ni corrigen errores.
+
+  docs:
+    Cambios exclusivos en archivos de documentación (.txt, .md, CLAUDE.md). No debe
+    tocar código.
+
+  chore:
+    Tareas de mantenimiento rutinario que no afectan la lógica ni la documentación
+    (ej: .gitignore, estructura de carpetas).
+
+  test:
+    Añadir, modificar o corregir bloques de auto-test o comandos de validación en
+    consola.
+
+
+3. ALCANCES ESPECÍFICOS DE CORPUS S.T.A.L.K.E.R. (<alcance>)
+--------------------------------------------------------------
+
+STK-9 — El alcance identifica el dominio de contenido o el área afectada. Debe ir
+siempre entre paréntesis. Esta tabla es la de ESTE repo y MANDA: el CLAUDE.md la
+resume por comodidad, pero cuando difieran gana este doc. La §3 es por-repo y jamás
+se hereda del framework (cita GIT-6) — la §3 del framework es su mapa de primitivas
+y no describe nada de lo que vive acá.
+
+Los tres primeros están EN USO; los siete restantes están RESERVADOS y entran en
+vigor cuando su árbol de contenido se escriba. Se declaran desde ya para que el día
+que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
+
+  EN USO:
+
+  assets:
+    Inventario, rutas y documentación de los ports (docs/ASSETS.md). No los archivos
+    en sí: los assets NO se versionan (STK-2).
+
+  repo:
+    Estructura del repositorio: .gitignore, carpetas, LICENSE, wiring del remote.
+
+  docs:
+    Cambios a documentación, metodología o convenciones cuando el commit es
+    puramente documental y no encaja en ningún otro alcance.
+
+  RESERVADOS (entran con su contenido):
+
+  anomalias:
+    Entidades de anomalía (eléctrica, térmica, gravitatoria, química) y su detección.
+    Nombres de clase prefijados (STK-5).
+
+  artefactos:
+    Artefactos: defs de ítem, efectos pasivos, radiación asociada, spawn en anomalía.
+
+  pda:
+    PDA: UI, mapa, contactos, tareas.
+
+  detectores:
+    Detectores de artefactos y su feedback (audio/visual).
+
+  npc:
+    Defs de NPC para CortexBase y datos de facción.
+
+  items:
+    Defs de ítem de la Zona contra Cargo que no sean artefactos (consumibles,
+    munición, equipo). Recordá COR-12: def y onUse en AMBOS realms.
+
+  models:
+    Registro de playermodels y wiring de modelos
+    (lua/autorun/corpus_stalker_playermodels.lua).
+
+Ojo: `chore` NO es un alcance sino un tipo (§2). Un commit que toca el .gitignore es
+`chore(repo)`, no `chore(chore)`.
+
+
+4. EJEMPLOS PRÁCTICOS DE APLICACIÓN
+-------------------------------------
+
+  4.1 Contenido:
+    - feat(anomalias): añade la anomalía eléctrica con su daño por proximidad
+    - feat(artefactos): registra los seis artefactos de tier 1 contra Cargo
+    - fix(items): la def del vodka registra su onUse en ambos realms
+
+  4.2 Estructura y docs:
+    - docs(assets): mapea las rutas del pack ZONA contra su origen
+    - chore(repo): ignora los directorios de assets portados
+    - docs(docs): formaliza la tabla de alcances de este repo
+
+
+5. AUTOMATIZACIÓN EN VSCODE
+-----------------------------
+
+Para garantizar que el flujo sea ágil y no requiera construcción manual en cada
+commit, se recomienda el uso de herramientas integradas en VSCode:
+
+  Extensión Conventional Commits:
+    Instalar la extensión "Conventional Commits" de Vivian De Smedt. Ofrece un menú
+    desplegable interactivo en la barra de Git para estructurar el tipo, alcance y
+    descripción de forma automática.
+
+=====================================================
+Documentos complementarios:
+  docs/STALKER_Arquitectura.md          → diseño del addon de contenido
+  docs/ASSETS.md                        → qué hay, de qué pack sale cada ruta
+  CLAUDE.md                             → guía operativa para asistencia con Claude Code
+  ../corpus/docs/corpus_convenciones_commits.txt → §0/1/2/4/5 heredadas (GIT-6)
+=====================================================
