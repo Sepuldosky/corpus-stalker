@@ -93,3 +93,20 @@ y no se hizo por cuenta propia.
 
 Verificación: checker en verde sobre 207 IDs + suite 12/12. Sin superficie de runtime: este
 repo sigue teniendo un solo archivo Lua y no se tocó.
+
+---
+
+## PARCHES DE sesión Reparación del gate de coherencia (acta 2026-07-22) — 2026-07-22
+
+Tanda de reparación documental propuesta por el gate de coherencia en su corrida COMPLETO del
+2026-07-22 (`../../corpus/docs/auditorias/2026-07-22_coherencia_docs.md`; el gate propone, el
+autor dispone). Acá lo que toca a este repo. Solo prosa; **ninguna norma cambió de contenido**.
+
+- PARCHE 1 — **Hallazgo 2.9 del acta (pase de valor):** `docs/STALKER_Arquitectura.md` decía
+  «cinco de los **ocho** IDs `STK-`… siguen con sede en el `CLAUDE.md`». `ids.yaml` define
+  STK-1..STK-9: son **nueve** VIGENTE (STK-9 se acuñó en la misma tanda del 2026-07-19). El
+  subconjunto «cinco con sede en CLAUDE.md» (STK-1,2,4,5,8) es correcto; solo el total estaba
+  desfasado en uno. Corregido `ocho` → `nueve`. **[APLICADO 2026-07-22]**
+
+Verificación: sin superficie de runtime — este repo sigue teniendo un solo archivo Lua y no se
+tocó. Cambio trazable al acta (§7.1). No commiteado ni pusheado (GIT-7).

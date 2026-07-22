@@ -109,4 +109,4 @@ Mínimo y honesto: fija alcance, frontera y mapa de consumo. **No diseña ningú
 | Anomalías / Artefactos / PDA / Detectores | Pendiente — bloque de diseño propio cada uno |
 | Defs de NPC y facciones | Pendiente — **bloqueado** por el Block de Cortex, que no abrió |
 
-> **Deuda anotada (2026-07-19):** cinco de los ocho IDs `STK-` (STK-1, STK-2, STK-4, STK-5, STK-8) siguen con **sede en el `CLAUDE.md`**, y este doc los **cita**. Consolidarlos acá es la continuación natural de la deuda D-3, pero mover una sede es decisión del autor y no se hizo por cuenta propia en la tanda que creó este archivo.
+> **Deuda anotada (2026-07-19):** cinco de los nueve IDs `STK-` (STK-1, STK-2, STK-4, STK-5, STK-8) siguen con **sede en el `CLAUDE.md`**, y este doc los **cita**. Consolidarlos acá es la continuación natural de la deuda D-3, pero mover una sede es decisión del autor y no se hizo por cuenta propia en la tanda que creó este archivo.
