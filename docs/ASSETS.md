@@ -11,7 +11,7 @@
 
 Las rutas de los modelos se conservan **exactamente como vienen del pack de origen**. Un `.mdl`
 referencia sus materiales por la ruta que tenía al compilarse (`cdmaterials`): re-namespacear
-`models/stalker/…` a `models/corpus_stalker/…` exigiría **recompilar los 152 modelos**. No se toca.
+`models/stalker/…` a `models/corpus_stalker/…` exigiría **recompilar los 156 modelos**. No se toca.
 
 Consecuencia: si un pack de origen está montado a la vez que este addon, los archivos coinciden en
 ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, gana el último montado
@@ -19,9 +19,9 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 
 ---
 
-## 1. Lo que el addon tiene hoy (245 MB, 1.516 archivos)
+## 1. Lo que el addon tiene hoy (249 MB, 1.548 archivos)
 
-### 1.1 Modelos — 152 `.mdl`
+### 1.1 Modelos — 156 `.mdl`
 
 | Ruta en el addon | `.mdl` | Qué es | Pack de origen |
 |---|---|---|---|
@@ -34,16 +34,21 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 | `models/player/seva/` (21), `models/player/bandit/` (7) | 28 | playermodels | `zona stalkerrp content` (WS `300746843`) |
 | `models/arms/` | 1 | `c_arms_stalker` (brazos first-person) | ídem |
 | `models/rashkinsk/` | 1 | `sidor` — **Sidorovich**, el trader. Rig **ValveBiped con los includes de animación del ciudadano HL2** (`male_shared`/`gestures`/`postures`): un `anim` entity le corre las secuencias de siempre. Material único: `act_stalker_trader_1` | `stalker rp  content #2` |
+| `models/spec45as/stalker/items/` | 3 | `medkit_low/med/high` — los botiquines normal/army/scientific de STALKER. El `low` re-viste al Medkit de Coagulant vía `Cargo.Items.SetModel` (`corpus_stalker_itemmodels.lua`); med/high esperan a los defs de ítem de la Zona | `stalker rp  content #4` |
+| `models/wick/wrbstalker/cop/newmodels/items/` | 1 | `wick_bandage` — la venda (modelos COP de wick). Re-viste a la Bandage de Coagulant | `stalker rp  content #1` |
 
 > **Importante:** los 43 modelos de `models/stalker/item/*` + `ammo/` + `raviool/flashlight`
 > **también los trae `stalker rp  content #1`, byte-idénticos**. Si ese pack está montado, los
 > consumidores resuelven igual sin este addon.
 
-### 1.2 Materiales — 536 archivos
+### 1.2 Materiales — 544 archivos
 
 `materials/models/stalkertnb/{humans,mutants,zomb}`, `materials/models/stalkertextures/{item,loner,
 freedom,bandit,dolg,clearsky}`, `materials/models/hgn/srp/items`, `materials/models/zavod_yantar` y
 70 sueltos en `materials/models/`. Todos son las texturas de los modelos de §1.1 — misma procedencia.
+Los medkits y la venda referencian sus texturas **fuera** de `materials/models/` (cdmaterials sin el
+prefijo `models/`): `materials/spec45as/stalker/items/item_medkit{,_2,_3}.{vmt,vtf}` y
+`materials/wick/wrbstalker/cop/newmodels/items/item_m_bandage.{vmt,vtf}` — rutas verbatim (STK-3).
 
 ### 1.3 Sonidos — 4
 
@@ -83,6 +88,20 @@ cp -r "$DEV/zona stalkerrp content/materials"/* "$ADDON/materials/"
 mkdir -p "$ADDON/models/rashkinsk" "$ADDON/materials/models/rashkinsk/sidor"
 cp "$DEV/stalker rp  content #2/models/rashkinsk/sidor."*             "$ADDON/models/rashkinsk/"
 cp "$DEV/stalker rp  content #2/materials/models/rashkinsk/sidor/"*   "$ADDON/materials/models/rashkinsk/sidor/"
+
+# Medkits (normal/army/scientific) + venda — re-vestido de los ítems de Coagulant
+# y futuros defs de la Zona (corpus_stalker_itemmodels.lua). Ojo: sus materiales
+# van FUERA de materials/models/ (cdmaterials sin prefijo "models/")
+mkdir -p "$ADDON/models/spec45as/stalker/items" "$ADDON/materials/spec45as/stalker/items"
+mkdir -p "$ADDON/models/wick/wrbstalker/cop/newmodels/items" "$ADDON/materials/wick/wrbstalker/cop/newmodels/items"
+for m in medkit_low medkit_med medkit_high; do
+  cp "$DEV/stalker rp  content #4/models/spec45as/stalker/items/$m."* "$ADDON/models/spec45as/stalker/items/"
+done
+for t in item_medkit item_medkit_2 item_medkit_3; do
+  cp "$DEV/stalker rp  content #4/materials/spec45as/stalker/items/$t."* "$ADDON/materials/spec45as/stalker/items/"
+done
+cp "$DEV/stalker rp  content #1/models/wick/wrbstalker/cop/newmodels/items/wick_bandage."* "$ADDON/models/wick/wrbstalker/cop/newmodels/items/"
+cp "$DEV/stalker rp  content #1/materials/wick/wrbstalker/cop/newmodels/items/item_m_bandage."* "$ADDON/materials/wick/wrbstalker/cop/newmodels/items/"
 
 # Los 4 sonidos de Craving (rutas verbatim, no renombrar)
 mkdir -p "$ADDON/sound/zona/stalkerrp/actions/interface"
