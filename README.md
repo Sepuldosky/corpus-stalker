@@ -19,10 +19,12 @@ de Corpus: el framework es delgado y no contiene lógica de dominio.
 
 ## Estado
 
-**Scaffold.** Hoy contiene el registro de playermodels y los assets de ítem que ya consumen Cargo y
-Craving. Las entidades (anomalías, artefactos, PDA, detectores) están **inventariadas y analizadas,
-pero no escritas** — el mapeo de assets y la autopsia del código de referencia están en
-`dev/stalker_rp_packs_mapa.md` (no publicado).
+**Scaffold.** Hoy contiene el registro de playermodels, el re-vestido de ítems genéricos del
+ecosistema con modelos de la Zona (botiquines, venda y mochilas, vía la API de sustitución de
+modelos de Cargo) y los assets de ítem que ya consumen Cargo y Craving. Las entidades (anomalías,
+artefactos, PDA, detectores) están **inventariadas y analizadas, pero no escritas** — el mapeo de
+assets y la autopsia del código de referencia están en `dev/stalker_rp_packs_mapa.md` (no
+publicado).
 
 ## Assets — no están en este repo
 

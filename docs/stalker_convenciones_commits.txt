@@ -91,7 +91,7 @@ resume por comodidad, pero cuando difieran gana este doc. La §3 es por-repo y j
 se hereda del framework (cita GIT-6) — la §3 del framework es su mapa de primitivas
 y no describe nada de lo que vive acá.
 
-Los tres primeros están EN USO; los siete restantes están RESERVADOS y entran en
+Los cuatro primeros están EN USO; los seis restantes están RESERVADOS y entran en
 vigor cuando su árbol de contenido se escriba. Se declaran desde ya para que el día
 que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
 
@@ -107,6 +107,11 @@ que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
   docs:
     Cambios a documentación, metodología o convenciones cuando el commit es
     puramente documental y no encaja en ningún otro alcance.
+
+  models:
+    Registro de playermodels y wiring de modelos: corpus_stalker_playermodels.lua
+    y corpus_stalker_itemmodels.lua (re-vestido de ítems genéricos vía
+    Cargo.Items.SetModel — activado 2026-07-23).
 
   RESERVADOS (entran con su contenido):
 
@@ -129,10 +134,6 @@ que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
   items:
     Defs de ítem de la Zona contra Cargo que no sean artefactos (consumibles,
     munición, equipo). Recordá COR-12: def y onUse en AMBOS realms.
-
-  models:
-    Registro de playermodels y wiring de modelos
-    (lua/autorun/corpus_stalker_playermodels.lua).
 
 Ojo: `chore` NO es un alcance sino un tipo (§2). Un commit que toca el .gitignore es
 `chore(repo)`, no `chore(chore)`.

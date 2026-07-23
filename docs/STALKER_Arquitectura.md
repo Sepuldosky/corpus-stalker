@@ -44,7 +44,7 @@ Qué le pide este addon a cada módulo, y qué pasa si no está. **Ninguna fila 
 | Módulo | Qué se consume | Superficie | Sin él |
 |---|---|---|---|
 | **Corpus** (hard) | Registro, persistencia, net, UI shell, ready barrier, log | Las 6 primitivas de §3 | El addon **no arranca** — falla ruidoso, no silencioso |
-| **Cargo** | Defs de ítem (artefactos, consumibles, munición, equipo), grid, peso, contenedores | `Cargo.Items.Register`, `Inventory.*`, `StatusPanel.RegisterBar` | Los ítems no se registran: se apagan con log. Las entidades de mundo siguen existiendo |
+| **Cargo** | Defs de ítem (artefactos, consumibles, munición, equipo), grid, peso, contenedores; **re-vestido de ítems genéricos** con modelos de la Zona (`corpus_stalker_itemmodels.lua` — lo único de esta fila implementado hoy) | `Cargo.Items.Register`, `Inventory.*`, `StatusPanel.RegisterBar`, `Items.SetModel` (su entry 34: sustituye el modelo de un def ajeno sin poseerlo) | Los ítems no se registran: se apagan con log. Las entidades de mundo siguen existiendo. Sin Cargo (o sin el asset montado), el re-vestido no corre y los defs conservan su default (la cajita) |
 | **Cortex** | Defs de NPC y datos de facción para CortexBase | `GetFactionInfo` y la superficie de defs de su Block (aún sin abrir) | Sin NPCs propios de la Zona; el resto del contenido funciona |
 | **Coagulant** | Efectos clínicos de la radiación y de las anomalías químicas | `ApplyExternalCondition(ply, id, severity)` — la firma que **CRV-4** congeló | Sin efectos clínicos; el daño cae al HP nativo |
 | **Caliber** | Mitigación de trajes de la Zona (armadura zonal) | Su pipeline de armadura de **jugador** — Block 3, todavía abierto | Los trajes pesan y se equipan, sin efecto de mitigación |
@@ -54,7 +54,7 @@ Qué le pide este addon a cada módulo, y qué pasa si no está. **Ninguna fila 
 
 ## 4. Dominios de contenido
 
-Inventariados y analizados; **ninguno escrito todavía** salvo los playermodels. Cada uno abre su propio bloque de diseño.
+Inventariados y analizados; **ninguno escrito todavía** salvo los playermodels y el re-vestido de ítems genéricos (`corpus_stalker_itemmodels.lua`, que no diseña dominio: solo pone piel de la Zona a defs ajenos). Cada uno abre su propio bloque de diseño.
 
 | Dominio | Qué es | Módulos que toca |
 |---|---|---|
@@ -64,7 +64,7 @@ Inventariados y analizados; **ninguno escrito todavía** salvo los playermodels.
 | **Detectores** | Ítems que señalan artefactos cercanos con feedback audible/visual | Cargo (def), anomalías/artefactos (lectura) |
 | **Defs de NPC** | Stalkers, mutantes y sus facciones para CortexBase | Cortex |
 | **Defs de ítem** | Consumibles, munición y equipo de la Zona | Cargo, Craving |
-| **Playermodels** | Registro de modelos jugables — **lo único implementado hoy** | Ninguno (registro directo del engine) |
+| **Playermodels** | Registro de modelos jugables — implementado (junto al re-vestido de ítems, lo único de este árbol) | Ninguno (registro directo del engine) |
 | **Facciones** | Datos de facción: nombre, relaciones, colores | Cortex (`GetFactionInfo`) |
 
 **STK-5 — Nombres de clase de entidad prefijados.** Los packs de origen usan `blood`, `fire`, `teleport`, `control`… — colisión garantizada con cualquier otro addon del servidor. Acá van como `corpus_stalker_<cosa>`. Es la misma razón que **COR-6**, aplicada al registro de `scripted_ents` en vez de al nombre de archivo.

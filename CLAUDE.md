@@ -19,9 +19,13 @@ subir, la respuesta casi siempre es exponer un punto de extensión en el módulo
 
 ## Estado
 
-**Scaffold.** Hoy solo hay `lua/autorun/corpus_stalker_playermodels.lua` (registro de playermodels) y
-los assets de ítem que consumen Cargo y Craving. Las entidades están **inventariadas y analizadas,
-pero no escritas**.
+**Scaffold.** Hoy hay dos archivos Lua: `lua/autorun/corpus_stalker_playermodels.lua` (registro de
+playermodels) y `lua/autorun/corpus_stalker_itemmodels.lua` (re-vestido de ítems genéricos con
+modelos de la Zona vía `Cargo.Items.SetModel` — Cargo entry 34: venda/botiquín de Coagulant y las
+dos mochilas genéricas; confirmado en juego el 2026-07-23, mapeo chica→backpack-1 /
+grande→backpack-2 incluido),
+más los assets de ítem que consumen Cargo y Craving. Las entidades están **inventariadas y
+analizadas, pero no escritas**.
 
 ## Docs — jerarquía de lectura
 
@@ -80,8 +84,9 @@ de él salen los alcances de este repo (**STK-9**, §3). Las secciones **0/1/2/4
 tipos, formato) se heredan de `../corpus/docs/corpus_convenciones_commits.txt`; **su §3 NO aplica
 acá**, es el mapa de primitivas del framework (GIT-6 — la §3 es por repo).
 
-Alcances **en uso**: `assets`, `repo`, `docs`. **Reservados** hasta que su contenido se escriba:
-`anomalias`, `artefactos`, `pda`, `detectores`, `npc`, `items`, `models`. Los tres commits
+Alcances **en uso**: `assets`, `repo`, `docs`, `models` (activado 2026-07-23 con
+`corpus_stalker_itemmodels.lua`). **Reservados** hasta que su contenido se escriba:
+`anomalias`, `artefactos`, `pda`, `detectores`, `npc`, `items`. Los tres commits
 existentes (`docs(assets)`, `docs(docs)`, `chore(repo)`) ya son conformes. `chore` es un **tipo**,
 no un alcance.
 
