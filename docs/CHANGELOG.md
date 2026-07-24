@@ -142,3 +142,36 @@ addon, sustitución 4/4 con él, cuál mochila es cuál). Offline no hay superfi
 inerte sin Corpus/Cargo. **Confirmado en juego por el autor el 2026-07-23** — sustitución 4/4 y
 mapeo chica→backpack-1 / grande→backpack-2 confirmado (deja de ser provisorio). Commiteado y
 pusheado con autorización del autor.
+
+---
+
+## PARCHES DE sesión La voz de Sidorovich: persona del trader — 2026-07-24
+
+Pedido del autor: mejorar el NPC trader con las voces de Sidorovich que entraron al árbol
+(`sound/npc/sidorovich/`, con su `about.txt`) — saludo al acercarse, despedida al irse del área,
+línea de espera cada 1 min para no ser repetitivo, y líneas al abrir/cerrar el trading — más
+idles de citizen HL2 (los de la plaza). Cargo expone el punto de extensión genérico
+(`Trade.SetDefaultPersona` + callbacks de evento, su entry 35); acá vive TODO el contenido
+Sidorovich (STK-1: Cargo no lo nombra en ninguna parte).
+
+- PARCHE 1 — feat(npc): nace `lua/autorun/corpus_stalker_sidorovich.lua` (ambos realms, sonda +
+  boot diferido a `Initialize` — COR-5): arma la persona `{name, model sidor.mdl, idles de plaza,
+  radius 220, wait_interval 60, sounds}` con el mapa del `about.txt` del autor (greet_first /
+  greet_1-4 / wait_1-4 / bye_1-3 / greet_habar / habar_greet_1-3 / bye_habar_1-3) y la registra
+  vía `Cargo.Trade.SetDefaultPersona` si la superficie existe (degradación honesta sin Cargo o
+  con un Cargo viejo). Cada ruta se filtra con `file.Exists` (STK-2): un set que quedó vacío no
+  se registra y el trader calla esa línea. Cuatro líneas quedan anotadas sin consumidor (`call`,
+  `habar_request`, `bye_give_habar`, `start_pda`). **Activa el alcance `npc`** (§3 de las
+  convenciones; el CLAUDE.md refleja). **[APLICADO 2026-07-24]**
+- PARCHE 2 — docs(assets): el inventario de sonidos pasa de 4 a **185** (+23 voces de Sidorovich,
+  +158 pistas de radio **sin consumidor todavía** — con nota de riesgo de licencia: música
+  comercial, no ports de juego); árbol total 590 MB / 1.730 archivos. Los 3 sonidos de
+  comer/beber `zona/stalkerrp/actions/*` quedan **RESERVADOS** a la comida propia de la Zona:
+  los consumibles genéricos de Craving pasaron al banco general del framework
+  (`corpus/sound/corpus/craving/`, COR-17 — separación sonidos/ítems, decisión del autor
+  2026-07-24). **[APLICADO 2026-07-24]**
+
+Verificación: la pasada en juego vive en el checklist de la entry 35 de Cargo (saludo/espera/
+despedida/habar + idles de plaza con este addon montado; trader citizen y mudo sin él).
+**Confirmado en juego por el autor el 2026-07-24** (entry 35 a-e ✓). Commiteado y pusheado con
+autorización del autor.

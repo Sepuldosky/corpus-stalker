@@ -91,7 +91,7 @@ resume por comodidad, pero cuando difieran gana este doc. La §3 es por-repo y j
 se hereda del framework (cita GIT-6) — la §3 del framework es su mapa de primitivas
 y no describe nada de lo que vive acá.
 
-Los cuatro primeros están EN USO; los seis restantes están RESERVADOS y entran en
+Los cinco primeros están EN USO; los cinco restantes están RESERVADOS y entran en
 vigor cuando su árbol de contenido se escriba. Se declaran desde ya para que el día
 que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
 
@@ -113,6 +113,11 @@ que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
     y corpus_stalker_itemmodels.lua (re-vestido de ítems genéricos vía
     Cargo.Items.SetModel — activado 2026-07-23).
 
+  npc:
+    NPCs de la Zona: hoy la persona de Sidorovich para el trader de Cargo
+    (corpus_stalker_sidorovich.lua, vía Cargo.Trade.SetDefaultPersona — activado
+    2026-07-24); mañana las defs de NPC para CortexBase y datos de facción.
+
   RESERVADOS (entran con su contenido):
 
   anomalias:
@@ -127,9 +132,6 @@ que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
 
   detectores:
     Detectores de artefactos y su feedback (audio/visual).
-
-  npc:
-    Defs de NPC para CortexBase y datos de facción.
 
   items:
     Defs de ítem de la Zona contra Cargo que no sean artefactos (consumibles,
