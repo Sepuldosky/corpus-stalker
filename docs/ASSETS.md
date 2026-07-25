@@ -19,7 +19,7 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 
 ---
 
-## 1. Lo que el addon tiene hoy (590 MB, 1.730 archivos)
+## 1. Lo que el addon tiene hoy (590 MB, 1.738 archivos)
 
 ### 1.1 Modelos — 156 `.mdl`
 
@@ -50,7 +50,7 @@ Los medkits y la venda referencian sus texturas **fuera** de `materials/models/`
 prefijo `models/`): `materials/spec45as/stalker/items/item_medkit{,_2,_3}.{vmt,vtf}` y
 `materials/wick/wrbstalker/cop/newmodels/items/item_m_bandage.{vmt,vtf}` — rutas verbatim (STK-3).
 
-### 1.3 Sonidos — 185 (343 MB)
+### 1.3 Sonidos — 193 (343 MB)
 
 | Ruta | Consumidor | Origen |
 |---|---|---|
@@ -58,7 +58,7 @@ prefijo `models/`): `materials/spec45as/stalker/items/item_medkit{,_2,_3}.{vmt,v
 | `sound/zona/stalkerrp/actions/interface/inv_vodka.ogg` | ídem (vodka de la Zona) | ídem |
 | `sound/zona/stalkerrp/actions/interface/inv_softdrink.ogg` | ídem (lata de la Zona) | ídem |
 | `sound/zona/stalkerrp/hunger.mp3` | Craving (`STOMACH`, sin fallback — excepción CRV-7) | ídem |
-| `sound/npc/sidorovich/*.ogg` (23) | `corpus_stalker_sidorovich.lua` → persona del trader de Cargo (greet/wait/bye/habar; el `about.txt` del autor en la carpeta mapea cada línea; 4 sin consumidor todavía: `call`, `habar_request`, `bye_give_habar`, `start_pda`) | voces de Sidorovich, S.T.A.L.K.E.R. vía GAMMA (extraídas por el autor de su instalación) |
+| `sound/npc/sidorovich/<accion>/*.ogg` (31: 27 en 9 carpetas de acción + 4 sueltos) | **Estándar de voz por ACCIÓN** (2026-07-24, `about.txt` de la carpeta): cada carpeta es una acción y cualquier sonido dentro entra a su pool — `greet_first`/`greet`/`wait`/`bye`/`trade_open_first`/`trade_open`/`trade_done`/`trade_fail` (vacía: faltan líneas en ruso)/`pain`/`death`. Consumen: el NextBot (`lua/entities/corpus_stalker_sidorovich.lua`, todas) y la persona del trader demo de Cargo (`lua/autorun/`, solo saludo/trade). Los 4 sueltos de la raíz no se escanean (`call`, `habar_request`, `bye_give_habar`, `start_pda`) | voces de Sidorovich, S.T.A.L.K.E.R. vía GAMMA (extraídas por el autor de su instalación; `pain`/`death` añadidas por el autor 2026-07-24) |
 | `sound/radio/*.ogg` (158) | **sin consumidor todavía** (futuro sistema de radio de la Zona) | música del ambiente GAMMA (Kino, Nautilus Pompilius, Molchat Doma, etc. — extraída por el autor) |
 
 > **STK-7 — Trampa de selección ya pagada:** los `actions/eat1-5.mp3` del pack son **tragos**, no
