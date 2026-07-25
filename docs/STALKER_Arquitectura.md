@@ -44,7 +44,7 @@ Qué le pide este addon a cada módulo, y qué pasa si no está. **Ninguna fila 
 | Módulo | Qué se consume | Superficie | Sin él |
 |---|---|---|---|
 | **Corpus** (hard) | Registro, persistencia, net, UI shell, ready barrier, log | Las 6 primitivas de §3 | El addon **no arranca** — falla ruidoso, no silencioso |
-| **Cargo** | Defs de ítem (artefactos, consumibles, munición, equipo), grid, peso, contenedores; **re-vestido de ítems genéricos** con modelos de la Zona (`corpus_stalker_itemmodels.lua` — lo único de esta fila implementado hoy) | `Cargo.Items.Register`, `Inventory.*`, `StatusPanel.RegisterBar`, `Items.SetModel` (su entry 34: sustituye el modelo de un def ajeno sin poseerlo) | Los ítems no se registran: se apagan con log. Las entidades de mundo siguen existiendo. Sin Cargo (o sin el asset montado), el re-vestido no corre y los defs conservan su default (la cajita) |
+| **Cargo** | Defs de ítem (artefactos, consumibles, munición, equipo), grid, peso, contenedores; **re-vestido de ítems genéricos** con modelos de la Zona (`corpus_stalker_itemmodels.lua`); **persona del trader** (`corpus_stalker_sidorovich.lua` en autorun) y **el trader real de la Zona** (`lua/entities/corpus_stalker_sidorovich.lua`, NextBot) — lo implementado hoy de esta fila | `Cargo.Items.Register`, `Inventory.*`, `StatusPanel.RegisterBar`, `Items.SetModel` (su entry 34), `Trade.SetDefaultPersona`/`GetDefaultPersona` (su entry 35), `Trade.AttachTrader` + `Trade.OpenFor` (el contrato que su trader demo anuncia para traders con comportamiento) | Los ítems no se registran: se apagan con log. Las entidades de mundo siguen existiendo. Sin Cargo, el re-vestido no corre (los defs conservan la cajita) y Sidorovich spawnea de cuerpo presente pero mudo y sin comercio |
 | **Cortex** | Defs de NPC y datos de facción para CortexBase | `GetFactionInfo` y la superficie de defs de su Block (aún sin abrir) | Sin NPCs propios de la Zona; el resto del contenido funciona |
 | **Coagulant** | Efectos clínicos de la radiación y de las anomalías químicas | `ApplyExternalCondition(ply, id, severity)` — la firma que **CRV-4** congeló | Sin efectos clínicos; el daño cae al HP nativo |
 | **Caliber** | Mitigación de trajes de la Zona (armadura zonal) | Su pipeline de armadura de **jugador** — Block 3, todavía abierto | Los trajes pesan y se equipan, sin efecto de mitigación |
@@ -54,7 +54,7 @@ Qué le pide este addon a cada módulo, y qué pasa si no está. **Ninguna fila 
 
 ## 4. Dominios de contenido
 
-Inventariados y analizados; **ninguno escrito todavía** salvo los playermodels y el re-vestido de ítems genéricos (`corpus_stalker_itemmodels.lua`, que no diseña dominio: solo pone piel de la Zona a defs ajenos). Cada uno abre su propio bloque de diseño.
+Inventariados y analizados; **ninguno escrito todavía** salvo los playermodels, el re-vestido de ítems genéricos (`corpus_stalker_itemmodels.lua`, que no diseña dominio: solo pone piel de la Zona a defs ajenos) y el trader Sidorovich (persona + entidad NextBot — ver fila nueva). Cada uno abre su propio bloque de diseño.
 
 | Dominio | Qué es | Módulos que toca |
 |---|---|---|
@@ -64,7 +64,8 @@ Inventariados y analizados; **ninguno escrito todavía** salvo los playermodels 
 | **Detectores** | Ítems que señalan artefactos cercanos con feedback audible/visual | Cargo (def), anomalías/artefactos (lectura) |
 | **Defs de NPC** | Stalkers, mutantes y sus facciones para CortexBase | Cortex |
 | **Defs de ítem** | Consumibles, munición y equipo de la Zona | Cargo, Craving |
-| **Playermodels** | Registro de modelos jugables — implementado (junto al re-vestido de ítems, lo único de este árbol) | Ninguno (registro directo del engine) |
+| **Trader (Sidorovich)** | La voz/piel del trader (persona, autorun) + la entidad real: NextBot matable (respawn por convar), stock que se borra al morir, mirada al jugador, flexes blink/mouth y animación a ritmo real (think de nextbot sin frenar + receta de arranque del `base_nextbot`) — implementado. **Estándar de voz por carpetas de acción** (`sound/npc/<trader>/<accion>/`, cualquier sonido dentro entra al pool) y subclaseable vía campos `ENT.Trader*`/`ENT.Voice*` para traders de terceros | Cargo (`Trade.SetDefaultPersona`, `Trade.AttachTrader`/`OpenFor`); la ruta admin "cualquier entidad como trader" es su roadmap #45; mañana migra a defs de CortexBase cuando su Block abra |
+| **Playermodels** | Registro de modelos jugables — implementado | Ninguno (registro directo del engine) |
 | **Facciones** | Datos de facción: nombre, relaciones, colores | Cortex (`GetFactionInfo`) |
 
 **STK-5 — Nombres de clase de entidad prefijados.** Los packs de origen usan `blood`, `fire`, `teleport`, `control`… — colisión garantizada con cualquier otro addon del servidor. Acá van como `corpus_stalker_<cosa>`. Es la misma razón que **COR-6**, aplicada al registro de `scripted_ents` en vez de al nombre de archivo.

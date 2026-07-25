@@ -19,17 +19,27 @@ subir, la respuesta casi siempre es exponer un punto de extensión en el módulo
 
 ## Estado
 
-**Scaffold.** Hoy hay tres archivos Lua: `lua/autorun/corpus_stalker_playermodels.lua` (registro de
-playermodels), `lua/autorun/corpus_stalker_itemmodels.lua` (re-vestido de ítems genéricos con
+**Scaffold.** Hoy hay cuatro archivos Lua: `lua/autorun/corpus_stalker_playermodels.lua` (registro
+de playermodels), `lua/autorun/corpus_stalker_itemmodels.lua` (re-vestido de ítems genéricos con
 modelos de la Zona vía `Cargo.Items.SetModel` — Cargo entry 34: venda/botiquín de Coagulant y las
 dos mochilas genéricas; confirmado en juego el 2026-07-23, mapeo chica→backpack-1 /
-grande→backpack-2 incluido) y `lua/autorun/corpus_stalker_sidorovich.lua` (la persona de
+grande→backpack-2 incluido), `lua/autorun/corpus_stalker_sidorovich.lua` (la persona de
 Sidorovich —voz + modelo + idles— colgada al trader demo de Cargo vía
-`Cargo.Trade.SetDefaultPersona`, el punto de sustitución cosmético del trade; **[PENDIENTE]** de
-pasada en juego, 2026-07-24),
-más los assets que consumen Cargo y Craving (modelos de ítem, voces de Sidorovich, música de
-radio sin consumidor todavía). Las entidades están **inventariadas y analizadas, pero no
-escritas**.
+`Cargo.Trade.SetDefaultPersona`; confirmada en juego el 2026-07-24) y
+`lua/entities/corpus_stalker_sidorovich.lua` — la **primera entidad del repo** (STK-5):
+Sidorovich NextBot, matable (100 HP) con respawn por convar
+(`corpus_stalker_trader_respawn`, 0 = no respawnea) y stock que se **borra** al morir (sin
+loot), mirada al jugador (head_yaw/head_pitch), flexes blink/mouth (la boca dura lo que dura
+el audio), pies en el piso y animación a ritmo real (causa raíz: el Think de un nextbot no se
+frena con NextThink — regla verificada contra DrGBase; dos intentos fallidos anotados en el
+CHANGELOG); cuelga el comercio con el mismo
+`Trade.AttachTrader` del demo y es **subclaseable** (campos `ENT.Trader*`/`ENT.Voice*`) con
+**voz estandarizada por carpetas de acción** (`sound/npc/sidorovich/<accion>/`, about.txt de
+la carpeta; incluye pain/death y trade_fail a la espera de líneas). Confirmado en juego el
+2026-07-24 (checklist a-f ✓); los ajustes post-pasada (anim, idles de pie, vida, convar, voz
+por carpetas) están **[PENDIENTE]** de su propia pasada. Además, los assets que consumen Cargo y Craving (modelos de
+ítem, voces de Sidorovich, música de radio sin consumidor todavía). Las demás entidades de la
+Zona (anomalías, artefactos…) siguen **inventariadas y analizadas, pero no escritas**.
 
 ## Docs — jerarquía de lectura
 

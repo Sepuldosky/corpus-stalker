@@ -175,3 +175,118 @@ Verificación: la pasada en juego vive en el checklist de la entry 35 de Cargo (
 despedida/habar + idles de plaza con este addon montado; trader citizen y mudo sin él).
 **Confirmado en juego por el autor el 2026-07-24** (entry 35 a-e ✓). Commiteado y pusheado con
 autorización del autor.
+
+---
+
+## PARCHES DE sesión Sidorovich de cuerpo presente: NextBot matable — 2026-07-24
+
+Pedido del autor (2026-07-24): la persona ya suena, pero el cuerpo seguía siendo la entity
+`anim` demo de Cargo — inmortal, flotando unos centímetros y con la cara congelada. Nace la
+**primera entidad del repo**: el trader real con comportamiento que el header del demo de Cargo
+siempre anunció («cuando llegue un trader con cerebro, llama al mismo `Trade.AttachTrader`
+desde su propia entidad»). Cargo no se tocó (STK-1: consumidor, nunca proveedor).
+
+- PARCHE 1 — feat(npc): nace `lua/entities/corpus_stalker_sidorovich.lua` (NextBot, clase
+  prefijada STK-5, spawnable en Entities → Corpus). Sobre el demo suma: **(a)** salud 400 y
+  muerte real — al morir **borra su stock antes del ragdoll** (el contenedor de sesión de
+  Cargo derrama al mundo en el remove — regla de eyección de `corpus_cargo_containers.lua`;
+  las instancias únicas se eliminan con `Instances.Delete` para no dejar huérfanos en
+  `data/`) y **respawnea a los 60 s** en su punto de spawn con stock fresco (AttachTrader
+  re-siembra); no looteable hoy ni cuando exista el loot de cadáveres (cruce Cortex §9) —
+  solo matable. **(b) Mirada:** pose params `head_yaw`/`head_pitch` (male_shared) hacia el
+  jugador vivo más cercano dentro del radio de la persona, tope de cuello ±60°/±25° y solo
+  hemisferio frontal. **(c) Expresiones:** detección por nombre de los dos flexes del
+  sidor.mdl — `blink` parpadea de verdad (triangular ~0,18 s cada 2,5–6 s) y `mouth` aletea
+  0→1 **mientras dura el audio de la línea en curso** (`SoundDuration` con fallback por
+  tamaño de archivo: los .ogg en Windows suelen devolver 0). **(d) Al piso:** el origen de
+  un NextBot es la planta de los pies y la locomoción lo asienta con gravedad — con el
+  origen correcto el IK de las secuencias ValveBiped apoya los pies como en un NPC normal.
+  Reusa la persona (`Trade.GetDefaultPersona`) y porta del demo la voz por proximidad y los
+  callbacks de trade (`OnTradeOpened/Dealt/Closed`); stock placeholder = kit dev de Cargo
+  hasta que exista el catálogo de ítems de la Zona. **Deuda declarada:** Cargo no tiene
+  trade_close server→cliente — una pantalla de trade abierta cuando él muere queda huérfana
+  y degrada honesto («The trader is out of reach»). **[APLICADO 2026-07-24]**
+
+Verificación (pasada en juego del autor): (a) spawnea con los pies en el piso, sin flotar;
+(b) parpadea, y la boca aletea al hablar y queda quieta en silencio; (c) sigue con la cabeza
+al jugador cercano y vuelve al frente cuando se va (si el cabeceo vertical sale invertido, el
+signo está anotado en `SidorCara`); (d) E abre el trade igual que el demo, con las voces de
+habar; (e) matarlo: **ningún ítem cae al piso**, ragdoll cosmético, y a los 60 s respawnea con
+stock fresco (el ragdoll se retira al volver él); (f) el trader demo de Cargo sigue intacto.
+**Confirmado en juego por el autor el 2026-07-24: checklist a-f completo ✓, y el +USE nativo
+SÍ llega al NextBot** (el fallback por KeyPress queda de red de seguridad). Cuatro reportes y
+un pedido de diseño de sonido salen de la pasada → la tanda de ajustes de abajo. Commiteado y
+pusheado con el resto de la tanda (autorización del autor 2026-07-24).
+
+---
+
+## PARCHES DE sesión Ajustes post-pasada del NextBot + estándar de voz por acción — 2026-07-24
+
+La pasada del NextBot pasó completa y dejó cuatro reportes (idles que ladean/sientan, vida,
+animación a ~5 fps, respawn configurable) más un pedido de diseño: **estandarizar la voz del
+trader por ACCIÓN** — carpeta por acción, cualquier sonido dentro entra al pool — para que
+otros usuarios armen sus traders sobre este NextBot sin tocar Lua. La ruta admin «cualquier
+entidad como trader» quedó anotada en el roadmap de Cargo (#45), no acá (CRG territorio).
+
+- PARCHE 1 — fix(npc): **animación lentísima («a 5 fps»).** CAUSA RAÍZ (3.er intento,
+  hallada siguiendo la pista del autor de comparar con el example NPC): el `Think` de la
+  entidad frenaba al bot con `NextThink(CurTime() + 0.5)` — en un nextbot el engine cuelga
+  del think la cadena de updates (BodyUpdate → `FrameAdvance`, que avanza **un paso fijo
+  por llamada**), así que a 2 Hz la animación corría a ~3% de velocidad. **Verificado
+  contra DrGBase** (`dev/other/drgbase`, espíritu CRG-24 — la base de nextbots más curtida
+  del workshop): su Think JAMÁS llama NextThink ni devuelve true; todo lo lento corre
+  detrás de gates internos (`CurTime() > delay`). Así queda acá: think sin frenar + gate de
+  0,25 s para voz y rotación de idles. Cada secuencia se arranca además con la receta del
+  base_nextbot (`PlaySequenceAndWait`, sv_nextbot.lua de Facepunch): `SetSequence` +
+  `ResetSequenceInfo()` + `SetCycle(0)` + `SetPlaybackRate` (helper `SidorTocarIdle`) —
+  DrGBase trae la misma, calcada. **Intentos fallidos anotados** (mismo trato que el
+  precedente de Cargo, su CHANGELOG #9, para no repetirlos): 1.º `UseClientSideAnimation()`
+  en el Initialize cliente — falló en juego, revertido; 2.º la receta `ResetSequenceInfo`
+  sola, sin destrabar el Think — falló: la receta era correcta y necesaria, pero la anim
+  seguía muerta de hambre por el think a 2 Hz. Rotación de idles por TIMER (12–25 s).
+  **[APLICADO 2026-07-24]**
+- PARCHE 2 — fix(npc): **idles solo DE PIE.** El autor vio al NPC ladeado a la pared y
+  sentado: eran las `plazaidle1-4` (loiterers de la plaza del trainstation). El set queda
+  `idle_subtle` / `idle01` / `lineidle01-03` (estándar, brazos cruzados, brazos caídos — las
+  que pidió el autor), en la entidad Y en la persona del demo. Verificar en juego que
+  ninguna `lineidle` se apoye; si una lo hace, se quita de la constante. **[APLICADO 2026-07-24]**
+- PARCHE 3 — fix(npc): **vida 400 → 100** (estándar NPC/jugador, pedido del autor); queda
+  como campo de subclase `TraderHealth`. **[APLICADO 2026-07-24]**
+- PARCHE 4 — feat(npc): **convar `corpus_stalker_trader_respawn`** (segundos, default 60,
+  `0` = no respawnea y el ragdoll queda; `FCVAR_ARCHIVE`). Sin UI a propósito (pedido del
+  autor: «no es necesario que vaya a utilities»). **[APLICADO 2026-07-24]**
+- PARCHE 5 — feat(npc): **estándar de voz por ACCIÓN.** Los sonidos de Sidorovich se
+  reorganizan en `sound/npc/sidorovich/<accion>/` (about.txt de la carpeta reescrito con el
+  mapa; ASSETS.md refleja: 23 → 31 voces, +pain1-4/death_1-4 que añadió el autor). Diez
+  acciones: `greet_first` (sin sonido cae a `greet`) / `greet` / `wait` / `bye` /
+  `trade_open_first` (cae a `trade_open`) / `trade_open` / `trade_done` / `trade_fail`
+  (cerró la pantalla sin comprar — carpeta VACÍA esperando líneas en ruso: silencio, jamás
+  error de Lua) / `pain` (OnInjured, gap 1,1 s) / `death` (la línea sale del RAGDOLL: la
+  entity se remueve con BecomeRagdoll y un EmitSound propio moriría con ella). El NextBot
+  escanea las carpetas con `file.Find` (pool cacheado por `VoiceDir`); la persona del demo
+  escanea las mismas carpetas de saludo/trade. **Subclase:** un trader de terceros pisa los
+  campos `ENT.Trader*`/`ENT.Voice*` (modelo, vida, plata, spread, stock, carpeta de voz,
+  radio, espera) y hereda todo — el fallback de +USE ahora despacha por
+  `isfunction(ent.SidorUsar)`, no por clase. **[APLICADO 2026-07-24]**
+- PARCHE 6 — fix(npc): **sincronía de la boca con el fin del audio** (reporte del autor en
+  la re-pasada). `SoundDuration` miente con .ogg en Windows y el fallback por tamaño
+  (~7,5 KB/s) **sobreestimaba todas las líneas un 60–90%** (greet_2: 0,80 s reales vs
+  1,84 s estimados) — la boca seguía aleteando ~1 s después del audio. Ahora la duración
+  de un .ogg se lee **exacta del propio contenedor** (granule de la última página Ogg ÷
+  sample rate del header Vorbis, `DuracionOgg` en la entidad), validada offline contra las
+  31 voces (0,52–13,78 s @ 44,1 kHz). Vale para cualquier .ogg de terceros en las carpetas
+  del estándar; `SoundDuration` → tamaño/7500 quedan de cadena de fallback (.wav/.mp3 o
+  parse fallido). **[APLICADO 2026-07-24]**
+
+Verificación (pasada en juego del autor): (a) la animación de idle se ve FLUIDA (no a 5 fps)
+y ninguna pose ladea a la pared ni sienta al NPC; (b) muere con 100 HP y suelta quejido al
+recibir daño (gap ~1 s) y línea de muerte desde el cadáver; (c) `corpus_stalker_trader_respawn
+0` → no respawnea (ragdoll queda), `60` → vuelve al minuto; (d) abrir el trade y cerrarlo SIN
+comprar: silencio (trade_fail vacía) y sin errores en consola; comprar algo y cerrar: no suena
+trade_fail; (e) las voces de siempre (saludo/espera/despedida/habar) siguen sonando — ahora
+desde las carpetas — tanto en el NextBot como en el trader demo de Cargo; (f) consola: el log
+de la persona reporta líneas por carpetas de acción; (g) la boca se detiene JUNTO con el
+audio (línea corta tipo pain ~0,5 s y línea larga tipo greet_first ~5 s, ambas al ras).
+**Confirmado en juego por el autor el 2026-07-24: checklist a-g completo ✓** (anim fluida tras
+el PARCHE 1 en su 3.ª forma; boca sincronizada tras el PARCHE 6). Commiteado y pusheado con
+autorización del autor.
