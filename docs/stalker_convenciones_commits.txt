@@ -98,8 +98,15 @@ que nazca la primera anomalía nadie invente un alcance nuevo sobre la marcha.
   EN USO:
 
   assets:
-    Inventario, rutas y documentación de los ports (docs/ASSETS.md). No los archivos
-    en sí: los assets NO se versionan (STK-2).
+    Dos cosas que conviven bajo el mismo nombre, con regímenes opuestos:
+    (a) Ports: inventario, rutas y documentación (docs/ASSETS.md). No los archivos
+        en sí — los assets portados NO se versionan (STK-2).
+    (b) Identidad visual: los SVG de marca en assets/ (glifo pelado y lockup, en
+        variante light y dark) y el header del README que los embebe. Estos SÍ se
+        versionan: son obra propia del autor, cubiertos por la licencia MIT del
+        repo, y STK-2 no los alcanza. Fuente de verdad del diseño:
+        corpus/docs/Corpus_Identidad.md.
+    Si un commit toca las dos, se parte en dos commits — no comparten motivo.
 
   repo:
     Estructura del repositorio: .gitignore, carpetas, LICENSE, wiring del remote.
