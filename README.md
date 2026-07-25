@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/stalker_lockup_dark.svg">
+    <img src="assets/stalker_lockup_light.svg" width="200" alt="Corpus S.T.A.L.K.E.R.">
+  </picture>
+</p>
+
 # Corpus S.T.A.L.K.E.R. (`corpus-stalker`)
 
 **El addon de contenido de S.T.A.L.K.E.R. del ecosistema [Corpus](https://github.com/Sepuldosky/corpus).**
