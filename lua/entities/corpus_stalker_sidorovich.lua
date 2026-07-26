@@ -212,6 +212,53 @@ if SERVER then
         return dur
     end
 
+    -- El trader de Cargo dejó de llevar encima sus referencias vivas (la tabla
+    -- del contenedor, el set de viewers): eran basura que el duplicator copiaba
+    -- en cada gm_save. Lo que antes se leía del campo ahora se pide por la API
+    -- pública del módulo, con el lazy check de siempre (COR-5): sin Cargo
+    -- montado esto degrada en silencio, nunca revienta.
+    local function TradeAPI(nombre)
+        local cargo = Corpus and Corpus.GetModule and Corpus.GetModule("cargo")
+        local fn = cargo and cargo.Trade and cargo.Trade[nombre]
+        return isfunction(fn) and fn or nil
+    end
+
+    local function Comerciando(ent, ply)
+        local fn = TradeAPI("HasViewer")
+        return fn ~= nil and fn(ent.CargoTrader, ply) == true
+    end
+
+    -- Clave de TODO registro por jugador que viva encima de la entidad: el
+    -- SteamID64, jamás el Player — el duplicator mergea `ent:GetTable()` entero
+    -- (ver el comentario de SidorVozThink). Vale para SidorVoz, SidorSaludados,
+    -- SidorTradeSaludados y SidorTradeHubo, que son las cuatro que hay.
+    local function ClaveDe(ply)
+        return IsValid(ply) and (ply:SteamID64() or tostring(ply)) or nil
+    end
+
+    -- Sello de sesión: una tabla NUEVA por carga de mapa, porque este archivo
+    -- se re-ejecuta en cada arranque. Sirve para reconocer estado que llegó de
+    -- un savegame — ver ENT:SidorIniciarSesion más abajo.
+    local SESION = {}
+
+    -- Segundo candado, y este NO depende de nada externo: mira los valores.
+    -- Cada cota sale de la línea exacta que escribe ese plazo —no de una
+    -- estimación— y ninguno puede caer más adelante que su cota dentro de UNA
+    -- sesión, porque el tiempo solo avanza:
+    --   SidorParpadeoDesde = ahora                  (SidorCara)
+    --   SidorProxUso       = ahora + 0,4            (SidorUsar)
+    --   SidorProxLento     = ahora + 0,25           (Think)
+    --   SidorProxParpadeo  = ahora + Rand(2,5 .. 6) (SidorCara)
+    --   SidorProxIdle      = ahora + Rand(12 .. 25) (Think)
+    -- Si alguno rompe su cota, el valor vino de otra partida y punto.
+    local function PlazoImposible(ent, ahora)
+        return (ent.SidorParpadeoDesde or 0) > ahora
+            or (ent.SidorProxUso or 0)       > ahora + 0.4
+            or (ent.SidorProxLento or 0)     > ahora + 0.25
+            or (ent.SidorProxParpadeo or 0)  > ahora + 6
+            or (ent.SidorProxIdle or 0)      > ahora + 25
+    end
+
     function ENT:SpawnFunction(ply, tr, clase)
         if not tr.Hit then return end
         local ent = ents.Create(clase)
@@ -252,7 +299,38 @@ if SERVER then
         self.SidorSpawnPos = self:GetPos()
         self.SidorSpawnAng = self:GetAngles()
 
-        -- idles: solo entran las secuencias que el modelo montado tiene
+        self:SidorIniciarSesion()
+    end
+
+    -- ------------------------------------------------------------------
+    -- ESTADO DE SESIÓN, y por qué se verifica AL LEER y no solo al nacer.
+    --
+    -- Nada de lo de acá abajo vale entre partidas: son índices resueltos
+    -- contra el modelo montado y plazos de `CurTime()`, que ARRANCA DE CERO al
+    -- cargar un mapa. Un savegame devuelve los campos planos de la entidad, así
+    -- que un plazo heredado queda en el futuro para siempre y un índice de flex
+    -- heredado puede apuntar a otra cosa.
+    --
+    -- La 1.ª versión de este arreglo reiniciaba en `Initialize` y **NO alcanzó**
+    -- (reporte en juego 2026-07-26, 2.ª corrida del check Q3 de Cargo, con
+    -- foto): el trader seguía sordo al USE, con la boca en movimiento y la cara
+    -- estirada. Ese fallo ES la evidencia — si el reset de `Initialize`
+    -- hubiese quedado en pie, `SidorProxUso = 0` habría destrabado el USE. No
+    -- lo hizo, así que los datos del save aterrizan DESPUÉS. Reiniciar al nacer
+    -- depende de un orden que no controlamos.
+    --
+    -- Por eso el sello: `SESION` es una tabla nueva por carga de mapa (este
+    -- archivo se re-ejecuta en cada arranque), y todo estado se marca con ella.
+    -- Un estado que llega de un savegame trae OTRO sello —o ninguno— y se
+    -- descarta en la primera lectura, sin importar cuándo lo escribieron.
+    -- Es la misma forma que arregló el contenedor de Cargo (su CHANGELOG,
+    -- entry 45, PARCHE 6): no confiar en el campo, validarlo contra lo vivo.
+    -- ------------------------------------------------------------------
+
+    function ENT:SidorIniciarSesion()
+        self.SidorSesion = SESION
+
+        -- índices contra el modelo montado: se resuelven, jamás se heredan
         self.SidorIdles = {}
         for _, nombre in ipairs(self.TraderIdles or {}) do
             local seq = self:LookupSequence(nombre)
@@ -265,10 +343,22 @@ if SERVER then
         if #self.SidorIdles > 0 then
             self:SidorTocarIdle(self.SidorIdles[math.random(#self.SidorIdles)])
         end
-        self.SidorProxIdle = CurTime() + math.Rand(12, 25)
+
+        -- Un peso de flex escrito con basura NO se limpia solo: este código
+        -- solo vuelve a escribir los DOS índices que conoce, así que cualquier
+        -- otro morph que haya quedado movido se queda movido para siempre — y
+        -- si el nombre no aparece en este modelo, el índice queda nil y ni
+        -- siquiera esos dos se reescriben. Por eso se ceran TODOS acá, antes de
+        -- volver a resolverlos: es lo único que garantiza una cara neutra sin
+        -- importar qué se escribió antes.
+        for i = 0, self:GetFlexNum() - 1 do
+            self:SetFlexWeight(i, 0)
+        end
 
         -- flexes: detección por nombre, nunca asunción — el sidor.mdl trae
-        -- exactamente blink y mouth; el citizen fallback no las tiene y calla
+        -- exactamente blink y mouth; el citizen fallback no las tiene y calla.
+        -- Heredar el índice es lo que deforma la cara: el mismo número señala
+        -- otro morph si el modelo que cargó no es el que guardó la partida.
         self.SidorFlexBlink, self.SidorFlexMouth = nil, nil
         for i = 0, self:GetFlexNum() - 1 do
             local nombre = string.lower(self:GetFlexName(i) or "")
@@ -278,20 +368,44 @@ if SERVER then
                 self.SidorFlexMouth = i
             end
         end
-        self.SidorProxParpadeo = CurTime() + math.Rand(1, 4)
-        self.SidorParpadeoDesde = 0
 
         -- pose params de cabeza (male_shared): -1 si el modelo no las trae
         self.SidorPPYaw = self:LookupPoseParameter("head_yaw")
         self.SidorPPPitch = self:LookupPoseParameter("head_pitch")
         self.SidorYaw, self.SidorPitch = 0, 0
 
-        -- contabilidad de voz, por sesión de mapa
+        -- plazos: todos relativos al AHORA de esta sesión
+        self.SidorProxIdle = CurTime() + math.Rand(12, 25)
+        self.SidorProxParpadeo = CurTime() + math.Rand(1, 4)
+        self.SidorParpadeoDesde = 0
+        self.SidorProximaLinea = 0
+        self.SidorHablaHasta = 0
+        self.SidorProxUso = 0
+        self.SidorProxLento = 0
+        self.SidorProxDolor = 0
+
+        -- contabilidad de voz + la marca de muerte, que heredada en true
+        -- dejaría un trader muerto de pie, mudo al USE y sordo a OnKilled
         self.SidorVoz = {}
         self.SidorSaludados = {}
         self.SidorTradeSaludados = {}
         self.SidorTradeHubo = {}
-        self.SidorProximaLinea = 0
+        self.SidorMuerto = false
+    end
+
+    -- El guard, con DOS candados, y el segundo existe porque el primero falló
+    -- en juego. El sello depende de que el duplicator restaure —o no— un campo
+    -- concreto, y la 4.ª corrida de Q3 mostró que ahí no se puede confiar: los
+    -- plazos volvían heredados y el sello no llegaba a delatarlos (se le podía
+    -- hablar, porque SidorUsar sí lo disparaba, pero la boca nacía moviéndose y
+    -- el parpadeo nunca ocurría). El candado por VALOR no puede fallar: no
+    -- pregunta de dónde vino el dato, pregunta si el dato es posible.
+    function ENT:SidorSesionViva()
+        if self.SidorSesion ~= SESION then
+            self:SidorIniciarSesion()
+            return
+        end
+        if PlazoImposible(self, CurTime()) then self:SidorIniciarSesion() end
     end
 
     -- Sidorovich no camina: atiende su búnker. Sin navmesh tampoco hay ruta.
@@ -337,37 +451,45 @@ if SERVER then
     function ENT:SidorVozThink()
         local radio = self.VoiceRadius
         local r2in, r2out = radio * radio, (radio * 1.15) ^ 2
-        local trader = self.CargoTrader
         local miPos = self:GetPos()
 
+        -- El registro de voz se indexa por SteamID64, NO por el Player: esta
+        -- tabla vive ENCIMA de la entidad y duplicator.CopyEntTable mergea
+        -- ent:GetTable() entero (solo saca funciones), así que un set con
+        -- Players de clave se colaría en cada duplicación y en cada gm_save.
+        -- Una clave string es dato plano — SidorSaludados ya usaba esta misma.
         self.SidorVoz = self.SidorVoz or {}
+        local conectados = {}
         for _, ply in ipairs(player.GetAll()) do
-            if IsValid(ply) and ply:Alive() then
-                local st = self.SidorVoz[ply]
-                local d2 = ply:GetPos():DistToSqr(miPos)
-                if st == nil then
-                    if d2 <= r2in then
-                        local sid = ply:SteamID64() or tostring(ply)
-                        if not self.SidorSaludados[sid] and self:SidorSpeak("greet_first") then
-                            self.SidorSaludados[sid] = true
-                        else
-                            self:SidorSpeak("greet")
+            local sid = ClaveDe(ply)
+            if sid ~= nil then
+                conectados[sid] = true
+                if ply:Alive() then
+                    local st = self.SidorVoz[sid]
+                    local d2 = ply:GetPos():DistToSqr(miPos)
+                    if st == nil then
+                        if d2 <= r2in then
+                            if not self.SidorSaludados[sid] and self:SidorSpeak("greet_first") then
+                                self.SidorSaludados[sid] = true
+                            else
+                                self:SidorSpeak("greet")
+                            end
+                            self.SidorVoz[sid] = { esperaProx = CurTime() + self.VoiceWait }
                         end
-                        self.SidorVoz[ply] = { esperaProx = CurTime() + self.VoiceWait }
+                    elseif d2 > r2out then
+                        self.SidorVoz[sid] = nil
+                        self:SidorSpeak("bye")
+                    elseif CurTime() >= st.esperaProx then
+                        if not Comerciando(self, ply) then self:SidorSpeak("wait") end
+                        st.esperaProx = CurTime() + self.VoiceWait
                     end
-                elseif d2 > r2out then
-                    self.SidorVoz[ply] = nil
-                    self:SidorSpeak("bye")
-                elseif CurTime() >= st.esperaProx then
-                    if not (trader and trader.viewers and trader.viewers[ply]) then
-                        self:SidorSpeak("wait")
-                    end
-                    st.esperaProx = CurTime() + self.VoiceWait
                 end
             end
         end
-        for ply in pairs(self.SidorVoz) do
-            if not IsValid(ply) then self.SidorVoz[ply] = nil end
+        -- el que SE FUE se lleva su estado; el muerto lo conserva, así que
+        -- reaparecer frente a Sidorovich no vuelve a disparar el saludo
+        for sid in pairs(self.SidorVoz) do
+            if not conectados[sid] then self.SidorVoz[sid] = nil end
         end
     end
 
@@ -377,6 +499,7 @@ if SERVER then
     -- ------------------------------------------------------------------
 
     function ENT:SidorCara()
+        self:SidorSesionViva()
         local dt = FrameTime()
         local ahora = CurTime()
 
@@ -429,9 +552,22 @@ if SERVER then
                 self.SidorParpadeoDesde = ahora
                 self.SidorProxParpadeo = ahora + math.Rand(2.5, 6)
             end
+            -- La fórmula del triángulo da por sentado que `t` es positivo, y
+            -- con un `SidorParpadeoDesde` heredado de otra partida sale
+            -- NEGATIVO: entra igual en la rama (porque -495 < 0,18) y el peso
+            -- se va a -5500, que dispara los vértices por el lado negativo del
+            -- morph. Esa era la cara estirada de la foto (2026-07-26, 3.ª
+            -- corrida de Q3).
+            -- El rango y el clamp son la RED, no el arreglo: acotar un `t`
+            -- imposible dejó de deformar la cara pero también mató el parpadeo,
+            -- porque el peso quedaba clavado en 0 mientras el plazo heredado
+            -- siguiera ahí (4.ª corrida: «arreglaron los flexes deformes, pero
+            -- no parpadea»). Lo que lo arregla de verdad es que ese plazo no
+            -- sobreviva: PlazoImposible, arriba.
             local t = ahora - (self.SidorParpadeoDesde or 0)
-            local peso = t < PARPADEO_T and (1 - math.abs(t / PARPADEO_T * 2 - 1)) or 0
-            self:SetFlexWeight(self.SidorFlexBlink, peso)
+            local peso = (t >= 0 and t < PARPADEO_T)
+                and (1 - math.abs(t / PARPADEO_T * 2 - 1)) or 0
+            self:SetFlexWeight(self.SidorFlexBlink, math.Clamp(peso, 0, 1))
         end
 
         -- boca: aletea 0→1 mientras dura el audio de la línea en curso
@@ -444,6 +580,10 @@ if SERVER then
         end
     end
 
+    -- Las cuatro entradas que leen estado de sesión preguntan primero. SidorCara
+    -- y Think corren cada frame, así que un estado forastero muere en el primer
+    -- fotograma tras cargar la partida; SidorUsar y OnKilled lo hacen porque son
+    -- los que quedaban colgados (el candado de USE y la marca de muerte).
     function ENT:BodyUpdate()
         -- quieto: avanza la secuencia a mano, nunca BodyMoveXY. Con animación
         -- client-side esto solo mantiene el ciclo del server como respaldo.
@@ -459,6 +599,7 @@ if SERVER then
         -- llamada). El NextThink(CurTime() + 0.5) que vivió acá dejaba la
         -- animación a ~3% de velocidad: el "lentísimo" de las pasadas 1-3.
         -- Lo lento corre detrás de un gate interno, como hace DrGBase.
+        self:SidorSesionViva()
         if CurTime() >= (self.SidorProxLento or 0) then
             self.SidorProxLento = CurTime() + 0.25
 
@@ -481,6 +622,7 @@ if SERVER then
 
     function ENT:SidorUsar(ply)
         if not IsValid(ply) or not ply:IsPlayer() then return end
+        self:SidorSesionViva()
         if self.SidorMuerto then return end
         -- candado anti doble disparo: ENT.Use y el fallback por KeyPress
         -- pueden llegar el mismo tick
@@ -521,7 +663,7 @@ if SERVER then
     end)
 
     function ENT:OnTradeOpened(ply)
-        local sid = IsValid(ply) and (ply:SteamID64() or tostring(ply)) or "?"
+        local sid = ClaveDe(ply) or "?"
         self.SidorTradeSaludados = self.SidorTradeSaludados or {}
         if not self.SidorTradeSaludados[sid] and self:SidorSpeak("trade_open_first", true) then
             self.SidorTradeSaludados[sid] = true
@@ -530,25 +672,27 @@ if SERVER then
         end
         -- para trade_fail: la sesión abre sin trato concretado todavía
         self.SidorTradeHubo = self.SidorTradeHubo or {}
-        self.SidorTradeHubo[ply] = false
+        self.SidorTradeHubo[sid] = false
         -- sin línea de espera con su pantalla abierta; el reloj vuelve al cerrar
-        local st = self.SidorVoz and self.SidorVoz[ply]
+        local st = self.SidorVoz and self.SidorVoz[sid]
         if st then st.esperaProx = math.huge end
     end
 
     function ENT:OnTradeDealt(ply)
-        if self.SidorTradeHubo then self.SidorTradeHubo[ply] = true end
+        local sid = ClaveDe(ply) or "?"
+        if self.SidorTradeHubo then self.SidorTradeHubo[sid] = true end
         self:SidorSpeak("trade_done", true)
     end
 
     function ENT:OnTradeClosed(ply)
+        local sid = ClaveDe(ply) or "?"
         -- cerró la pantalla sin comprar nada → trade_fail (hoy la carpeta
         -- está vacía a la espera de líneas en ruso: silencio, sin errores)
-        if self.SidorTradeHubo and self.SidorTradeHubo[ply] == false then
+        if self.SidorTradeHubo and self.SidorTradeHubo[sid] == false then
             self:SidorSpeak("trade_fail", true)
         end
-        if self.SidorTradeHubo then self.SidorTradeHubo[ply] = nil end
-        local st = self.SidorVoz and self.SidorVoz[ply]
+        if self.SidorTradeHubo then self.SidorTradeHubo[sid] = nil end
+        local st = self.SidorVoz and self.SidorVoz[sid]
         if st then st.esperaProx = CurTime() + self.VoiceWait end
     end
 
@@ -570,21 +714,29 @@ if SERVER then
     end
 
     function ENT:OnKilled(dmginfo)
+        self:SidorSesionViva()
         if self.SidorMuerto then return end
         self.SidorMuerto = true
 
         local cargo = Corpus and Corpus.GetModule and Corpus.GetModule("cargo")
         local trader = self.CargoTrader
         if trader ~= nil then
-            if cargo and cargo.Instances and isfunction(cargo.Instances.Delete) then
-                for _, entry in ipairs(trader.cont.items) do
-                    if entry.uid then cargo.Instances.Delete(entry.uid) end
+            -- el stock ya no se lee de un campo `cont` del trader: es del
+            -- CONTENEDOR, y se pide por la API pública (ver TradeAPI arriba)
+            local stockFn = TradeAPI("StockOf")
+            local stock = stockFn and stockFn(trader) or nil
+            if istable(stock) then
+                if cargo and cargo.Instances and isfunction(cargo.Instances.Delete) then
+                    for _, entry in ipairs(stock) do
+                        if entry.uid then cargo.Instances.Delete(entry.uid) end
+                    end
                 end
+                table.Empty(stock)
             end
-            table.Empty(trader.cont.items)
             -- las pantallas abiertas quedan huérfanas (deuda declarada en el
             -- header): cualquier acción degrada honesto en el server de trade
-            table.Empty(trader.viewers)
+            local clearFn = TradeAPI("ClearViewers")
+            if clearFn then clearFn(trader) end
         end
 
         hook.Run("OnNPCKilled", self, dmginfo:GetAttacker(), dmginfo:GetInflictor())
