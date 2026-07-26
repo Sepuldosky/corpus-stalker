@@ -290,3 +290,123 @@ audio (línea corta tipo pain ~0,5 s y línea larga tipo greet_first ~5 s, ambas
 **Confirmado en juego por el autor el 2026-07-24: checklist a-g completo ✓** (anim fluida tras
 el PARCHE 1 en su 3.ª forma; boca sincronizada tras el PARCHE 6). Commiteado y pusheado con
 autorización del autor.
+
+---
+
+## PARCHES DE sesión El trader de Cargo soltó sus referencias vivas: Sidorovich se adapta — 2026-07-26
+
+**Esta tanda es reactiva y no nació acá.** Cargo saneó la entidad del trader (su CHANGELOG, entry
+45): `duplicator.CopyEntTable` hace `table.Merge(data, ent:GetTable())` quitando solo las funciones,
+así que la Entity y el set de viewers que colgaban de `ent.CargoTrader` entraban a cualquier
+duplicación y a cualquier `gm_save`. Se mudaron a una tabla del módulo indexada por id de sesión, y
+con ellas se fue el campo `cont` — que arrastraba el stock entero.
+
+Sidorovich leía los tres. **Sin este parche, matarlo tira `attempt to index a nil value` dentro de
+`OnKilled`, y ese error se lleva puestos el ragdoll y el respawn.** Se detectó al correr el saneo
+del lado de Cargo, no en juego: el repo no estaba entre las raíces declaradas de esa tanda, y el
+autor decidió cerrarlo en la misma pasada en vez de dejar el módulo roto entre tandas.
+
+- PARCHE 1 — fix(npc): **`OnKilled` pide el stock por la API.** `trader.cont.items` →
+  `Trade.StockOf(trader)`, y `table.Empty(trader.viewers)` → `Trade.ClearViewers(trader)`. Van por
+  un helper `TradeAPI(nombre)` con el lazy check de siempre (COR-5): sin Cargo montado, o con un
+  Cargo viejo que no tenga la función, degrada en silencio y jamás revienta — que es justo lo que
+  faltaba para que este acople no fuera frágil. El borrado de instancias del stock (para no dejar
+  huérfanas) queda igual. **[APLICADO 2026-07-26]**
+- PARCHE 2 — fix(npc): **la espera del `SidorVozThink` pregunta por la API.**
+  `trader.viewers[ply]` → `Trade.HasViewer(trader, ply)`. Mismo efecto: no se le habla al que tiene
+  la pantalla abierta. **[APLICADO 2026-07-26]**
+- PARCHE 3 — fix(npc): **`ENT.SidorVoz` deja de indexarse por Player.** Era el mismo defecto que
+  Cargo acaba de sacarse de encima, en esta entidad y sin que nadie lo hubiera mirado: una tabla
+  `{ [Player] = { esperaProx } }` viviendo directo sobre la entity, que el duplicator copia. Pasa a
+  SteamID64 — dato plano, y `SidorSaludados` ya usaba esa misma clave. La poda cambia de "borrar los
+  Player inválidos" a "borrar a los que se DESCONECTARON": así el que muere cerca conserva su
+  estado y reaparecer no vuelve a disparar el saludo. **[APLICADO 2026-07-26]**
+
+Verificación offline: los tres archivos Lua de este repo parsean con el LuaJIT del harness de Cargo.
+El grueso lo cubre el harness de Cargo (418 verdes), que ejercita la API nueva del lado del módulo.
+
+- PARCHE 4 — fix(npc): **el estado de sesión no se hereda de un savegame.** Reporte de la ronda 2
+  del check Q3 (2026-07-26): tras cargar una partida, Sidorovich **no respondía al USE**, «seguía
+  hablando infinitamente» y tenía **la cara deformada**. Tres síntomas, una causa: el duplicator
+  restaura los campos planos de la entidad, y **`CurTime()` arranca de cero al cargar el mapa**, así
+  que todo sello de tiempo heredado queda en el futuro para siempre. `Initialize` reiniciaba trece
+  campos y **se le escapaban cinco** — `SidorHablaHasta` (la boca se anima contra un plazo que no
+  llega: el habla infinita y la cara deforme), `SidorProxUso` (el candado anti doble-USE nunca
+  vence: por eso no se le podía hablar), `SidorProxLento`, `SidorProxDolor` y `SidorMuerto`, que no
+  dio la cara pero es el peor de todos: heredado en `true` deja un trader muerto de pie. Ahora el
+  bloque es uno solo, enumerado **desde el árbol** (§7.2). **[APLICADO 2026-07-26]**
+- PARCHE 5 — fix(npc): **el reinicio se verifica AL LEER, no al nacer.** El PARCHE 4 reiniciaba en
+  `Initialize` y **no alcanzó**: la 2.ª corrida de Q3 (con foto) volvió con los tres síntomas
+  intactos. Ese fallo es la evidencia que faltaba — si el reset hubiera quedado en pie,
+  `SidorProxUso = 0` habría destrabado el USE; no lo hizo, así que **el duplicator escribe los
+  campos planos DESPUÉS** de `Initialize` y pisa cualquier reinicio hecho al nacer. Reiniciar en el
+  constructor depende de un orden que no controlamos.
+  Ahora hay un **sello de sesión**: `SESION` es una tabla nueva por carga de mapa (este archivo se
+  re-ejecuta en cada arranque) y todo el estado se marca con ella. Las cuatro entradas que leen ese
+  estado —`SidorCara` y `Think`, que corren cada frame, más `SidorUsar` y `OnKilled`, que son las
+  que quedaban colgadas— preguntan primero por `SidorSesionViva()`: si el sello no es el de esta
+  sesión, el estado llegó de un savegame y se descarta ahí mismo, sin importar cuándo lo
+  escribieron. Los índices de flex entran en el reinicio: heredar el número hace que apunte a otro
+  morph si el modelo que cargó no es el que guardó la partida.
+  Es exactamente la forma que arregló el contenedor del lado de Cargo (su entry 45, PARCHE 6): **no
+  confiar en el campo, validarlo contra lo vivo.** La diferencia entre los dos arreglos explica por
+  qué uno funcionó a la primera y el otro no: el de Cargo validaba al leer, este reiniciaba al
+  nacer. **Devolvió el USE y el comercio**, confirmado en la 3.ª corrida de Q3 — la cara siguió
+  rota, y esa mitad la cierra el PARCHE 6. **[APLICADO 2026-07-26]**
+- PARCHE 6 — fix(npc): **la cara estirada tenía una cuenta detrás, y el clamp que faltaba.** La
+  3.ª corrida de Q3 llegó con una foto de dos Sidorovich lado a lado —el cargado deforme, el recién
+  spawneado perfecto— que aisló el defecto sin ambigüedad. La causa es aritmética: el parpadeo es un
+  triángulo `peso = 1 - |t / 0,18 * 2 - 1|` que **da por sentado que `t` es positivo**. Con
+  `SidorParpadeoDesde` heredado de la partida guardada —mayor que el `CurTime()` nuevo, que arranca
+  de cero— `t` sale NEGATIVO, entra igual en la rama porque `-495 < 0,18`, y el peso se va a
+  **-5500** (verificado con la constante real del archivo, no estimado). Un `SetFlexWeight` con ese
+  valor dispara los vértices por el lado negativo del morph: la púa de la foto.
+  Dos arreglos, y hacen falta los dos. **(a) `math.Clamp(peso, 0, 1)`** — con el mismo `t` imposible
+  el peso pasa a 0, así que ningún sello heredado ni ningún `t` fuera de rango puede volver a
+  deformar el modelo. **(b) cerar TODOS los flexes al iniciar sesión**, antes de re-resolver los
+  índices: este código solo reescribe los dos que conoce, así que un morph que quedó movido se queda
+  movido para siempre — y si el nombre no aparece en el modelo montado, el índice queda `nil` y ni
+  esos dos se reescriben. Sin (b) una cara ya estirada no se endereza aunque el sello funcione; sin
+  (a) se vuelve a estirar. **La cara dejó de deformarse, y el clamp destapó que estaba TAPANDO**:
+  ver el PARCHE 7. **[APLICADO 2026-07-26]**
+- PARCHE 7 — fix(npc): **un segundo candado, por VALOR, porque el sello no dispara.** La 4.ª corrida
+  de Q3 volvió con «arreglaron los flexes deformes, **pero no parpadea**, la boca nace hablando pero
+  al decir algo se arregla», y ese cuadro es un diagnóstico completo: el plazo heredado **seguía
+  ahí**. Con `SidorParpadeoDesde` de otra partida, `t` es siempre negativo, así que antes del clamp
+  el peso era -5500 (cara estirada) y después del clamp es 0 **para siempre** — de ahí que no
+  parpadee. El clamp no arregló nada: convirtió un síntoma visible en uno silencioso. Y la boca
+  moviéndose hasta hablarle confirma lo mismo desde el otro lado: el reinicio solo corría en
+  `SidorUsar`, no en `SidorCara`.
+  O sea que el **sello de sesión del PARCHE 5 no está disparando** en el camino que corre cada
+  frame. No se pudo determinar por qué desde fuera del juego, así que se dejó de depender de él:
+  `PlazoImposible` compara cada plazo contra la **cota exacta de la línea que lo escribe**
+  (`SidorParpadeoDesde` = `ahora`; `SidorProxUso` = `ahora + 0,4`; `SidorProxLento` = `ahora + 0,25`;
+  `SidorProxParpadeo` ≤ `ahora + 6`; `SidorProxIdle` ≤ `ahora + 25`). Ninguno puede superar su cota
+  dentro de una sesión porque el tiempo solo avanza: si lo hace, vino de otra partida, sin
+  preguntarle nada al duplicator. Verificado fuera del juego con la aritmética real — detecta la
+  entidad heredada, no se realimenta tras el reinicio, y **cero falsos positivos en 200 000 frames
+  sanos**. El sello se queda como primer candado: cubre los índices de flex, las tablas de voz y la
+  marca de muerte, que no tienen forma de «valor imposible». **[APLICADO 2026-07-26]**
+
+Verificación offline: no hay forma de cubrir esto en el harness —los archivos de `lua/entities/` los
+carga el engine, no el manifest del módulo— así que solo se verificó que el archivo parsea con el
+LuaJIT del harness de Cargo. La prueba real es Q3.
+
+Verificación en juego: **va con la planilla `Q` de Cargo**, que es donde vive esta tanda. Tres checks
+tocan a este repo: **Q4** (el slice 1 del comercio sigue igual — con Sidorovich montado corre sobre
+él y no sobre el demo, porque es el trader que el autor usa de verdad), **Q5** (matarlo y confirmar
+ragdoll y respawn, que es lo que el `nil` de `OnKilled` rompía; va como check propio y no dentro de
+Q4 a propósito: son dos cosas que fallan por motivos distintos) y **Q3**, que terminó siendo el que
+más costó — el savegame.
+Planilla: https://claude.ai/code/artifact/5734e521-db27-400d-9693-0fc1e12a85a9
+
+**Confirmado en juego por el autor el 2026-07-26**, tras seis rondas: Q4 y Q5 cerraron en la
+primera; Q3 necesitó los PARCHES 4-7, en este orden — reiniciar en `Initialize` (no alcanzó),
+sellar la sesión (devolvió el USE y el comercio, no la cara), acotar el peso del flex (quitó la
+deformación pero mató el parpadeo) y por fin el candado por valor (todo en su sitio).
+
+**La lección del repo, y es de método:** los tres primeros intentos se apoyaban en *cuándo* corre el
+código, y el orden en que el duplicator escribe no se puede observar desde fuera del juego. El que
+funcionó se apoya en *qué valores son posibles*. **Cuando el orden no es observable, el invariante
+tiene que ser de valor.** El contenedor de Cargo ya lo hacía —pregunta si el id está vivo, no cuándo
+llegó— y fue el único que salió bien a la primera.
