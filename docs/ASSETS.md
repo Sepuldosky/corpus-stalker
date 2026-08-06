@@ -34,8 +34,8 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 | `models/player/seva/` (21), `models/player/bandit/` (7) | 28 | playermodels | `zona stalkerrp content` (WS `300746843`) |
 | `models/arms/` | 1 | `c_arms_stalker` (brazos first-person) | ídem |
 | `models/rashkinsk/` | 1 | `sidor` — **Sidorovich**, el trader. Rig **ValveBiped con los includes de animación del ciudadano HL2** (`male_shared`/`gestures`/`postures`): un `anim` entity le corre las secuencias de siempre. Material único: `act_stalker_trader_1` | `stalker rp  content #2` |
-| `models/spec45as/stalker/items/` | 3 | `medkit_low/med/high` — los botiquines normal/army/scientific de STALKER. El `low` re-viste al Medkit de Coagulant vía `Cargo.Items.SetModel` (`corpus_stalker_itemmodels.lua`); med/high esperan a los defs de ítem de la Zona | `stalker rp  content #4` |
-| `models/wick/wrbstalker/cop/newmodels/items/` | 1 | `wick_bandage` — la venda (modelos COP de wick). Re-viste a la Bandage de Coagulant | `stalker rp  content #1` |
+| `models/spec45as/stalker/items/` | 3 | `medkit_low/med/high` — los botiquines normal/army/scientific de STALKER. **Los tres esperan defs de ítem PROPIAS de la Zona.** El `low` re-vistió al Medkit de Coagulant hasta el 2026-08-06; se retiró — ver §1.4 | `stalker rp  content #4` |
+| `models/wick/wrbstalker/cop/newmodels/items/` | 1 | `wick_bandage` — la venda (modelos COP de wick). **Espera un def propio.** Re-vistió a la Bandage de Coagulant hasta el 2026-08-06 — ver §1.4 | `stalker rp  content #1` |
 
 > **Importante:** los 43 modelos de `models/stalker/item/*` + `ammo/` + `raviool/flashlight`
 > **también los trae `stalker rp  content #1`, byte-idénticos**. Si ese pack está montado, los
@@ -76,6 +76,32 @@ prefijo `models/`): `materials/spec45as/stalker/items/item_medkit{,_2,_3}.{vmt,v
 > Workshop/GitHub es real — evaluar antes de publicar cualquier bundle con `sound/radio/`. No se
 > versionan (STK-2), como todo el árbol.
 
+### 1.4 Los cuatro modelos médicos: esperan un def propio, no una sustitución
+
+`medkit_low/med/high` (spec45as) y `wick_bandage` (wick) están en el árbol **sin consumidor**.
+
+Hasta el **2026-08-06** el `low` y la venda re-vestían al Medkit y a la Bandage de Coagulant vía
+`Cargo.Items.SetModel`. **Se retiró** (decisión del autor). Dos motivos, y el segundo es el que
+manda:
+
+1. Coagulant trae **sus propios modelos** desde el 2026-08-05 — 19 `.mdl` CC BY 4.0 en
+   `models/corpus_coagulant/`. La sustitución dejó de tapar una cajita de cartón y pasó a tapar
+   un modelo bueno.
+2. Y sobre todo: **un botiquín de la Zona no es una piel del Medkit genérico, es otro ítem.** Un
+   `medkit_army` tiene otro peso, otro precio y otra curación que el Medkit de Coagulant. Vestir
+   al genérico con su modelo miente sobre lo que es: el jugador ve un botiquín militar de STALKER
+   y recibe los números del genérico.
+
+Lo que corresponde es que la Zona registre **sus** defs contra Cargo, con `onUse` delegando en el
+contrato de Coagulant (`ApplyTreatment`) — el módulo sigue siendo dueño de la medicina (COR-1/CRG-1),
+y este addon del contenido. El alcance de commit `items` sigue **RESERVADO** hasta que se escriban,
+y **STK-1 + COA-28 mandan: que el modelo exista no crea el ítem.** El diseño se acuerda antes.
+
+> **Dónde SÍ sigue habiendo sustitución, y por qué es distinto.** Las dos mochilas de Cargo se
+> registran **sin modelo a propósito** (`corpus_cargo_supplies.lua`: *"The backpacks declare NO
+> model on purpose: HL2 has no backpack prop"*). Ahí no se tapa nada: se llena un hueco que el
+> módulo dueño dejó abierto para un addon de contenido. **Llenar un hueco no es pisar un modelo.**
+
 ---
 
 ## 2. Reconstruir el árbol
@@ -99,9 +125,9 @@ mkdir -p "$ADDON/models/rashkinsk" "$ADDON/materials/models/rashkinsk/sidor"
 cp "$DEV/stalker rp  content #2/models/rashkinsk/sidor."*             "$ADDON/models/rashkinsk/"
 cp "$DEV/stalker rp  content #2/materials/models/rashkinsk/sidor/"*   "$ADDON/materials/models/rashkinsk/sidor/"
 
-# Medkits (normal/army/scientific) + venda — re-vestido de los ítems de Coagulant
-# y futuros defs de la Zona (corpus_stalker_itemmodels.lua). Ojo: sus materiales
-# van FUERA de materials/models/ (cdmaterials sin prefijo "models/")
+# Medkits (normal/army/scientific) + venda — a la espera de defs de item PROPIAS
+# de la Zona (ver §1.4). Ojo: sus materiales van FUERA de materials/models/
+# (cdmaterials sin prefijo "models/")
 mkdir -p "$ADDON/models/spec45as/stalker/items" "$ADDON/materials/spec45as/stalker/items"
 mkdir -p "$ADDON/models/wick/wrbstalker/cop/newmodels/items" "$ADDON/materials/wick/wrbstalker/cop/newmodels/items"
 for m in medkit_low medkit_med medkit_high; do

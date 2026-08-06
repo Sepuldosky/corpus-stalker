@@ -21,9 +21,10 @@ subir, la respuesta casi siempre es exponer un punto de extensión en el módulo
 
 **Scaffold.** Hoy hay cuatro archivos Lua: `lua/autorun/corpus_stalker_playermodels.lua` (registro
 de playermodels), `lua/autorun/corpus_stalker_itemmodels.lua` (re-vestido de ítems genéricos con
-modelos de la Zona vía `Cargo.Items.SetModel` — Cargo entry 34: venda/botiquín de Coagulant y las
-dos mochilas genéricas; confirmado en juego el 2026-07-23, mapeo chica→backpack-1 /
-grande→backpack-2 incluido), `lua/autorun/corpus_stalker_sidorovich.lua` (la persona de
+modelos de la Zona vía `Cargo.Items.SetModel` — Cargo entry 34: **hoy sólo las dos mochilas**,
+mapeo chica→backpack-1 / grande→backpack-2 confirmado en juego el 2026-07-23. La sustitución de
+la venda y el botiquín de Coagulant se **retiró el 2026-08-06**: ese módulo ya trae los suyos, y
+los medkits de la Zona son ítems DISTINTOS, no una piel del genérico — esperan defs propias), `lua/autorun/corpus_stalker_sidorovich.lua` (la persona de
 Sidorovich —voz + modelo + idles— colgada al trader demo de Cargo vía
 `Cargo.Trade.SetDefaultPersona`; confirmada en juego el 2026-07-24) y
 `lua/entities/corpus_stalker_sidorovich.lua` — la **primera entidad del repo** (STK-5):

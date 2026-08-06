@@ -410,3 +410,42 @@ código, y el orden en que el duplicator escribe no se puede observar desde fuer
 funcionó se apoya en *qué valores son posibles*. **Cuando el orden no es observable, el invariante
 tiene que ser de valor.** El contenedor de Cargo ya lo hacía —pregunta si el id está vivo, no cuándo
 llegó— y fue el único que salió bien a la primera.
+
+---
+
+## PARCHES DE sesión Los ítems médicos de Coagulant dejan de sustituirse — 2026-08-06
+
+Decisión del autor. Hasta hoy `corpus_stalker_itemmodels.lua` le ponía `wick_bandage` a la Bandage
+de Coagulant y `medkit_low` a su Medkit. Se retira, por dos motivos, y el segundo es el que manda:
+
+1. **Coagulant ya trae los suyos** desde el 2026-08-05: 19 `.mdl` propios (CC BY 4.0) en
+   `models/corpus_coagulant/`. La sustitución dejó de tapar la cajita de cartón del drop y pasó a
+   tapar un modelo bueno.
+2. **Un botiquín de la Zona no es una piel del genérico, es otro ítem.** Un `medkit_army` tiene
+   otro peso, otro precio y otra curación que el Medkit de Coagulant; vestir al genérico con su
+   modelo miente sobre lo que es — el jugador ve un botiquín militar de STALKER y recibe los
+   números del genérico. El lugar de esos modelos son **defs de ítem propias de la Zona**.
+
+- PARCHE 1 — fix(models): se sacan las dos entradas de `corpus_coagulant_*` de `SUSTITUCIONES` en
+  `lua/autorun/corpus_stalker_itemmodels.lua`. El header del archivo pasa a decir por qué, y deja
+  escrita la distinción que hace correcta a la sustitución que **sí** queda. **[PENDIENTE]**
+
+- PARCHE 2 — docs(assets): alta de `docs/ASSETS.md` §1.4 — los cuatro modelos médicos
+  (`medkit_low/med/high` + `wick_bandage`) quedan **sin consumidor**, esperando defs propias. Se
+  actualizan las dos filas de §1.1 y el comentario del script de reconstrucción, más el `README.md`
+  y el «Estado» del `CLAUDE.md`. **[APLICADO 2026-08-06]**
+
+**LO QUE SÍ QUEDA, Y POR QUÉ ES DISTINTO: las dos mochilas de Cargo.** Ésas se registran **sin
+modelo a propósito** (`corpus_cargo_supplies.lua`: *"The backpacks declare NO model on purpose: HL2
+has no backpack prop"*). Ahí no se tapa nada — se llena un hueco que el módulo dueño dejó abierto
+para un addon de contenido. **Llenar un hueco no es pisar un modelo**, y ésa es la regla con la que
+se decide la próxima vez.
+
+**Lo que NO se hizo:** no se escribieron los defs de ítem de la Zona. El alcance de commit `items`
+sigue **RESERVADO**, y STK-1 + COA-28 mandan — el diseño se acuerda con el autor y se anota antes de
+bajarlo a código. Que el modelo exista no crea el ítem. Los cuatro `.mdl` siguen en el árbol de
+assets (no versionado, STK-2) esperándolos.
+
+Verificación offline: sintaxis Lua válida (`luaparser`). El PARCHE 1 toca runtime y nace
+`[PENDIENTE]`: falta la pasada en juego — qué mirar es que la venda y el medkit de Coagulant
+dropeen con **su** modelo y no con el de la Zona, y que las dos mochilas sigan con el suyo.
