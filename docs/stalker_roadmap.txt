@@ -79,18 +79,23 @@ orden y con qué criterio de entrada.
            anterior: cada 20 minutos reales el stock se sortea de nuevo, 1-6 por
            ítem. Consecuencia buscada: el catálogo cambia de una visita a otra.
         c) **Es un NPC NUEVO**, no Sidorovich con comida. **RESUELTO el
-           2026-08-17: es el LIBRARIAN**, modelo `hawaiian.mdl` de
-           `dev/other/stalker rp  content #1/models/npc/stalker/`, confirmado
-           por el autor contra una captura del juego. **Beard queda descartado:
-           no está en ese roster** — los doce modelos de esa carpeta son el
-           protagonista (Degtyarev) y otros NPC.
-           *Vuelta que costó y conviene no repetir:* el censo de texturas
-           reportó que ese modelo viste un traje neutral con máscara antigás y
-           NO una camisa hawaiana ni el camuflaje de Freedom, o sea que no
-           coincidía con la descripción. El que estaba desactualizado era el
-           recuerdo del autor, que venía de una versión MODEADA del NPC. **El
-           censo acertó al no adjudicar y pedir ojos**: un asset y una
-           descripción que no coinciden no dicen cuál de los dos está mal.
+           2026-08-17: es el HAWAIANO** (`Hawaiian`), modelo `hawaiian.mdl` de
+           `dev/other/stalker rp  content #1/models/npc/stalker/`. **Beard queda
+           descartado: no está en ese roster** — los doce modelos de esa carpeta
+           son el protagonista (Degtyarev) y otros NPC.
+           *La vuelta, en tres pasos, porque las dos primeras conclusiones eran
+           equivocadas y eso es lo que vale la pena registrar:* (1) el censo de
+           texturas midió que el modelo viste un traje neutral con máscara
+           antigás y NO una camisa hawaiana ni camuflaje de Freedom, y se
+           reportó como "el nombre miente"; (2) el autor lo explicó por un
+           recuerdo de una versión MODEADA del NPC, y eso quedó escrito como el
+           desenlace; (3) la explicación real es que **se había equivocado de
+           NPC**: éste se llama el Hawaiano —nombre confirmado en la wiki en
+           español— y el nombre del archivo estuvo bien desde el principio.
+           **El archivo nunca mintió; lo que no coincidía era el nombre con el
+           que se lo estaba buscando.** Un asset y una descripción que no
+           coinciden no dicen cuál de los dos está mal, y la primera hipótesis
+           que explica la diferencia tampoco tiene por qué ser la correcta.
 
       LO QUE ESTO ES, DICHO POR EL AUTOR: *«al final es un cambio de fachada del
       Sidorovich este trader, pero vendiendo comida con otro modelo y voces, si al
@@ -121,9 +126,9 @@ orden y con qué criterio de entrada.
       ni la espera**; los precios entran igual y el multiplicador los escala
       después. Y no se escribe desde acá: STK-1.
 
-      LA VOZ YA TIENE SU CASA, VACÍA: `sound/npc/librarian/` con las diez
+      LA VOZ YA TIENE SU CASA, VACÍA: `sound/npc/hawaiian/` con las diez
       subcarpetas del estándar de acción y su `about.txt`. El autor suelta los
-      `.ogg` ahí y la subclase declara `ENT.VoiceDir = "npc/librarian"`. Mientras
+      `.ogg` ahí y la subclase declara `ENT.VoiceDir = "npc/hawaiian"`. Mientras
       estén vacías el trader **calla, sin error** — así que se puede cerrar el
       tramo entero antes de que exista un solo audio. Ojo: `sound/` está en el
       `.gitignore` (STK-2), esas carpetas no viajan en un commit.
@@ -132,14 +137,14 @@ orden y con qué criterio de entrada.
       MISMO. El autor extendió el pedido: lo del stock sorteado con re-sorteo
       cada 20 minutos **también se le aplica a Sidorovich**, y de paso se le
       cambia el catálogo:
-        · **Librarian** → categoría `food`.
+        · **Hawaiano** → categoría `food`.
         · **Sidorovich** → **munición** (todas), **medicina** (por categoría) y
           **un par de armas ARC9 EFT**. Y se le **saca todo el stock DEV** que
           tiene hoy de placeholder: eso queda para el **trader DEMO de Cargo**,
           que es de quien salió y donde no molesta.
       ⇒ Consecuencia de diseño, y es la que importa: **el re-sorteo no es del
         trader de comida, es de la clase base.** Escribirlo en la subclase del
-        Librarian y después copiarlo a Sidorovich sería escribir dos veces lo
+        Hawaiano y después copiarlo a Sidorovich sería escribir dos veces lo
         mismo — va en `corpus_stalker_sidorovich.lua` (la base) parametrizado
         por categorías y cantidades, y cada trader declara lo suyo. Es el mismo
         argumento por el que la voz es por carpetas y no por tabla.
