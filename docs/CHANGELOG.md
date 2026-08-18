@@ -477,7 +477,7 @@ es la firma del defecto, y es lo que separa "murió mal" de "quedó atrapado".
   …)` queda **donde estaba** (no puede moverse, ver arriba) pero envuelto en `ProtectedCall`, que
   reporta el error en consola con stack —vía `ErrorNoHaltWithStack`— sin frenar la ejecución. Un
   `pcall` pelado se lo habría comido en silencio, que para un bug de terceros es peor que el bug.
-  El atacante y el inflictor se leen a locales antes del closure. **[PENDIENTE]**
+  El atacante y el inflictor se leen a locales antes del closure. **[APLICADO 2026-08-17]**
 
 **Por qué van los dos parches y no solo el de Caliber.** Arreglar únicamente al listener culpable
 deja la trampa armada para el próximo addon que escuche `OnNPCKilled` — y son varios los que lo
@@ -494,3 +494,9 @@ los dos parches se verifican por separado, no se cubren entre sí.
 **Ojo al probar:** un Sidorovich que ya quedó trabado en la sesión **sigue trabado** — tiene
 `SidorMuerto = true` en memoria y un autorefresh de Lua no lo limpia. Hay que removerlo a mano o
 recargar el mapa antes de la pasada.
+
+**PASÓ el 2026-08-17.** El autor lo mató: cayó al piso como ragdoll, lo remató, respawneó y lo
+volvió a matar — el ciclo completo, no un solo golpe, y eso es lo que discrimina contra el estado
+trabado, porque el defecto viejo se manifestaba justamente en los golpes SIGUIENTES al primero.
+Consola sin una línea del scavenger. Commiteado y pusheado a `origin/main` (`fix(npc): protege el
+hook.Run de OnKilled para que la muerte no dependa de terceros`).
