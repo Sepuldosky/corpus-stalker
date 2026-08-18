@@ -34,6 +34,7 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 | `models/player/seva/` (21), `models/player/bandit/` (7) | 28 | playermodels | `zona stalkerrp content` (WS `300746843`) |
 | `models/arms/` | 1 | `c_arms_stalker` (brazos first-person) | ídem |
 | `models/rashkinsk/` | 1 | `sidor` — **Sidorovich**, el trader. Rig **ValveBiped con los includes de animación del ciudadano HL2** (`male_shared`/`gestures`/`postures`): un `anim` entity le corre las secuencias de siempre. Material único: `act_stalker_trader_1` | `stalker rp  content #2` |
+| `models/npc/stalker/` | 1 | `hawaiian` — **el Hawaiano**, el trader de comestibles (`lua/entities/corpus_stalker_hawaiian.lua`, roadmap [1]). Rig ValveBiped de 56 huesos con los includes del ciudadano HL2 (`m_anm`, `humans/male_shared` — de ahí salen `head_yaw`/`head_pitch` y los idles de pie), más `Police_Animations`/`Police_ss`/`combine_soldier_anims`. **`numflexdesc = 0`: NO tiene flexes**, así que este trader no parpadea ni mueve la boca — es del modelo, no un defecto, y la base degrada en silencio. Dos materiales, y viven bajo `materials/models/player/stalker/` (el `cdmaterials` del `.mdl` dice `models\\player\\stalker\\`, **no** `npc/`): `act_faces_1_06` (cara) y `act_stalker_neutral_2` (+ su `_n`, traje neutral con máscara antigás). Todo leído del header del `.mdl` y de los `.vmt`, no del nombre | `stalker rp  content #1` |
 | `models/spec45as/stalker/items/` | 3 | `medkit_low/med/high` — los botiquines normal/army/scientific de STALKER. **Los tres esperan defs de ítem PROPIAS de la Zona.** El `low` re-vistió al Medkit de Coagulant hasta el 2026-08-06; se retiró — ver §1.4 | `stalker rp  content #4` |
 | `models/wick/wrbstalker/cop/newmodels/items/` | 1 | `wick_bandage` — la venda (modelos COP de wick). **Espera un def propio.** Re-vistió a la Bandage de Coagulant hasta el 2026-08-06 — ver §1.4 | `stalker rp  content #1` |
 
@@ -59,7 +60,7 @@ prefijo `models/`): `materials/spec45as/stalker/items/item_medkit{,_2,_3}.{vmt,v
 | `sound/zona/stalkerrp/actions/interface/inv_softdrink.ogg` | ídem (lata de la Zona) | ídem |
 | `sound/zona/stalkerrp/hunger.mp3` | Craving (`STOMACH`, sin fallback — excepción CRV-7) | ídem |
 | `sound/npc/sidorovich/<accion>/*.ogg` (31: 27 en 9 carpetas de acción + 4 sueltos) | **Estándar de voz por ACCIÓN** (2026-07-24, `about.txt` de la carpeta): cada carpeta es una acción y cualquier sonido dentro entra a su pool — `greet_first`/`greet`/`wait`/`bye`/`trade_open_first`/`trade_open`/`trade_done`/`trade_fail` (vacía: faltan líneas en ruso)/`pain`/`death`. Consumen: el NextBot (`lua/entities/corpus_stalker_sidorovich.lua`, todas) y la persona del trader demo de Cargo (`lua/autorun/`, solo saludo/trade). Los 4 sueltos de la raíz no se escanean (`call`, `habar_request`, `bye_give_habar`, `start_pda`) | voces de Sidorovich, S.T.A.L.K.E.R. vía GAMMA (extraídas por el autor de su instalación; `pain`/`death` añadidas por el autor 2026-07-24) |
-| `sound/npc/hawaiian/<accion>/*.ogg` (**0 — carpetas creadas y VACÍAS**, 2026-08-17) | Voz del **trader de comida** (roadmap [1]), mismo estándar por acción que Sidorovich y las mismas diez carpetas, con su `about.txt`. **Vacías a propósito**: una carpeta sin sonidos hace que el trader calle esa acción sin error, así que el tramo se puede cerrar antes de que exista un audio. El nombre de la carpeta es contrato con `ENT.VoiceDir = "npc/hawaiian"` — si se renombra una sin la otra, el trader queda **mudo sin dar error**. El personaje es el **Hawaiano** y su modelo es `hawaiian.mdl` — el nombre del archivo estuvo bien desde el principio; la carpeta se llamó `librarian/` medio día porque el autor se había equivocado de NPC | **las aporta el autor**; todavía no hay ninguna |
+| `sound/npc/hawaiian/<accion>/*.ogg` (**0 — carpetas creadas y VACÍAS**, 2026-08-17) | Voz del **trader de comida**, **ya con consumidor desde el 2026-08-18**: `lua/entities/corpus_stalker_hawaiian.lua` declara `ENT.VoiceDir = "npc/hawaiian"`. Mismo estándar por acción que Sidorovich y las mismas diez carpetas, con su `about.txt`. **Vacías a propósito**: una carpeta sin sonidos hace que el trader calle esa acción sin error, así que el tramo se puede cerrar antes de que exista un audio. El nombre de la carpeta es contrato con `ENT.VoiceDir = "npc/hawaiian"` — si se renombra una sin la otra, el trader queda **mudo sin dar error**. El personaje es el **Hawaiano** y su modelo es `hawaiian.mdl` — el nombre del archivo estuvo bien desde el principio; la carpeta se llamó `librarian/` medio día porque el autor se había equivocado de NPC | **las aporta el autor**; todavía no hay ninguna |
 | `sound/radio/*.ogg` (158) | **sin consumidor todavía** (futuro sistema de radio de la Zona) | música del ambiente GAMMA (Kino, Nautilus Pompilius, Molchat Doma, etc. — extraída por el autor) |
 
 > **STK-7 — Trampa de selección ya pagada:** los `actions/eat1-5.mp3` del pack son **tragos**, no
@@ -138,6 +139,15 @@ for t in item_medkit item_medkit_2 item_medkit_3; do
   cp "$DEV/stalker rp  content #4/materials/spec45as/stalker/items/$t."* "$ADDON/materials/spec45as/stalker/items/"
 done
 cp "$DEV/stalker rp  content #1/models/wick/wrbstalker/cop/newmodels/items/wick_bandage."* "$ADDON/models/wick/wrbstalker/cop/newmodels/items/"
+
+# El Hawaiano (trader de comestibles). El .mdl vive en models/npc/stalker/ pero
+# su cdmaterials apunta a models/player/stalker/ — la ruta del archivo y la del
+# material NO coinciden, y las dos son verbatim (STK-3).
+mkdir -p "$ADDON/models/npc/stalker" "$ADDON/materials/models/player/stalker"
+cp "$DEV/stalker rp  content #1/models/npc/stalker/hawaiian."* "$ADDON/models/npc/stalker/"
+for t in act_faces_1_06 act_stalker_neutral_2 act_stalker_neutral_2_n; do
+  cp "$DEV/stalker rp  content #1/materials/models/player/stalker/$t."* "$ADDON/materials/models/player/stalker/"
+done
 cp "$DEV/stalker rp  content #1/materials/wick/wrbstalker/cop/newmodels/items/item_m_bandage."* "$ADDON/materials/wick/wrbstalker/cop/newmodels/items/"
 
 # Los 4 sonidos de Craving (rutas verbatim, no renombrar)
