@@ -193,6 +193,96 @@ orden y con qué criterio de entrada.
       el terreno ya medido — la API de trade de Cargo, la trampa del re-stock, la
       tabla de precios propuesta y lo que queda por votar.
 
+      ---------------------------------------------------------------
+      ESTADO AL 2026-08-18 — EN PAUSA, Y POR DECISIÓN DEL AUTOR.
+      ---------------------------------------------------------------
+      Se abrió la sesión de ejecución del handoff, se midió el terreno entero y
+      apareció un BLOQUEANTE que el handoff no había visto: **Cargo no tenía API
+      pública para ENUMERAR sus defs.** `Items.Get(id)` responde por una, y la
+      regla votada en (a) —"todo lo que declare category = food", regla y no
+      lista— exige recorrer el registro. Censado con `rg --no-ignore` sobre el
+      workspace: los únicos tres recorridos (dev, lan, iconeditor) leen
+      `CARGO.Items._defs` directo porque viven ADENTRO de Cargo; ningún
+      consumidor de afuera la tocaba. Y STK-1 prohíbe agregar la superficie
+      desde acá.
+      VOTO DEL AUTOR, textual: *«si mejor primero vamos directo a hacer eso y
+      dejamos pendiente este prompt. Digo si no hay API mejor construirla
+      correctamente»*. ⇒ Se escribió del lado de Cargo (su roadmap **#63**,
+      CRG-69: `Items.GetAll()` / `Items.ByCategory(id)`, ordenadas por id) y
+      **este tramo queda pendiente hasta que ese entry pase a [APLICADO]** con
+      su pasada en juego. NO se escribió una sola línea de este repo.
+
+      LO QUE SÍ QUEDÓ VOTADO EN ESA MISMA SESIÓN, para que no se re-pregunte:
+        · **§5.3 — el intervalo va por CONVAR**, `corpus_stalker_trader_restock`,
+          default **1200** s (0 = sin re-sorteo ⇒ el trader queda en la rama de
+          stock fijo). Mismo patrón que `corpus_stalker_trader_respawn`, que
+          existe justo por esto: sin la perilla, S3 no se verifica en una pasada
+          sin esperar 20 minutos de reloj.
+        · **§4 — la tabla de precios se aprueba TAL CUAL**, los 15 valores
+          propuestos (bread 2 · sausage 6 · tuna 3 · water 2 · softdrink 2 ·
+          vodka 12 · sliced_bread 3 · sweet_bun 2 · instant_noodles 2 ·
+          milk_carton 2 · cola_bottle 3 · cola_glass 2 · beer_can 2 ·
+          beer_bottle 2 · beer_bottle_big 3). Todos ≥ 2, así que el spread se
+          comporta en los 15. Cinco salen de dato publicado y ocho son
+          estimación declarada como tal — está dicho en el §4 del handoff.
+        · **§5.7 — RESUELTA POR UNA TERCERA VÍA que no era ninguna de las dos
+          que se ofrecieron.** El autor: *«es mejor que se resetee el intervalo
+          después de vender aunque sea una sola cosa, así se evita que se pierda
+          de inmediato si el timer está cerca, y de paso lo que borra el GC va
+          directo a restock»*. O sea: **vender al trader REINICIA su reloj de
+          re-sorteo**, y lo vendido se evapora igual — pero con los 20 minutos
+          completos por delante, nunca a los diez segundos. Es una respuesta
+          mejor que la pregunta: no distingue "de su categoría" de "forastero",
+          así que no agrega una segunda fuente de verdad sobre el stock (§5.4
+          intacto), y resuelve el caso que dolía. Sabe a favor del jugador y el
+          autor lo sabe.
+
+      CINCO COSAS MEDIDAS EN ESA SESIÓN QUE VALEN CUANDO ESTO SE RETOME, todas
+      con `rg --no-ignore` o contra la fuente en disco:
+        1. **Las 4 defs médicas de Coagulant TAMPOCO declaraban `value`** — el
+           mismo problema que el §2.4 del handoff detectó en las 15 de comida,
+           que nadie había mirado del lado médico. Sin precio, Sidorovich las
+           LISTA y el server se niega a moverlas.
+           **RESUELTO el 2026-08-18**, a pedido del autor y en el repo dueño
+           (CHANGELOG de Coagulant, *Las cuatro médicas tienen precio*): venda
+           **8** · torniquete **35** · medkit **50** · bolsa de sangre **220**,
+           los cuatro **estimaciones etiquetadas como tales**. ⇒ El catálogo
+           `medical` de Sidorovich ya es comerciable de punta a punta: las 4 de
+           Coagulant más `cargo_hl2_healthkit` (150) y `cargo_hl2_healthvial`
+           (60), que ya lo eran. Falta la pasada en juego de las cuatro.
+        2. **La regla por categoría le devuelve el stock DEV a los dos
+           traders.** `cargo_dev_food` es `category = food`, `cargo_dev_medkit`
+           es `medical` y `cargo_dev_ammo_9mm` es `ammo`: un filtro por
+           categoría pelado los vuelve a meter, que es justo lo que el S5 del
+           handoff exige que NO pase ("ningún ítem cargo_dev_*"). Hace falta una
+           exclusión declarada por prefijo `cargo_dev_`, parametrizada en la
+           clase base como todo lo demás.
+        3. **Poner `value` en las defs de Craving NO es sólo data.**
+           `corpus_craving_items.lua` arma el `Items.Register` campo por campo y
+           **no reenvía `value`**: hay que agregar esa línea o los 15 números no
+           llegan a Cargo. Es una línea de lógica, no una violación de CRV-12,
+           pero conviene saberlo antes de prometer "sólo data".
+        4. **`weapons.GetList()` NO hereda de la base, y ahí se pierde el
+           `SubCategory` del §5.6.** Leído en la fuente del engine
+           (`garrysmod/lua/includes/modules/weapons.lua`, no de memoria):
+           `GetList` devuelve las tablas CRUDAS y sólo `Get(name)` corre
+           `TableInherit`. Medido sobre los 4 packs de `dev/other/`: **9 de 99
+           spawnables no declaran `SubCategory` propia** y la heredan
+           (`cr50ds`, `deagle_l5`, `deagle_xix`, `glock18c`, `glock19x`, `m45`,
+           `auga1`, `mdr556`, `scarx17`). Con `GetList` pelado leerían `nil` y
+           caerían al cubo equivocado **sin dar error**. La vía barata es
+           caminar la cadena `Base` con `weapons.GetStored`, que no copia nada —
+           `weapons.Get` inflaría el árbol de attachments entero por arma.
+        5. **El string de la frase del §5.6 ya no es el que dice el handoff, y
+           eso REFUERZA su método.** En la localización base del pack
+           (`arc9_eft_base.lua`) `eft_subcat_melee` vale `"⠀Melee"` — con un
+           BRAILLE BLANK (U+2800) adelante, no el dígito `9` que cita el §5.6;
+           el `"9Melee weapons"` vive en los archivos de idioma. O sea que el
+           texto cambia hasta entre archivos del MISMO pack. Comparar por id de
+           frase (`ARC9:GetPhrase("eft_subcat_melee")`) sigue siendo lo único
+           estable, y `GetPhrase` vive en `common/` ⇒ **existe en server**, que
+           es donde se siembra el stock.
+
       DEUDA MENOR QUE VIAJA CON ESTO, del mismo día y del mismo lugar: dos defs
       de Craving declaran el sonido de consumo equivocado (`cola_bottle` y
       `cola_glass` suenan a lata siendo botellas). Es data de Craving y se
