@@ -154,17 +154,23 @@ orden y con qué criterio de entrada.
       trader que persiste Y re-sortea tiene dos fuentes de verdad sobre su
       stock).
 
-      LO QUE ESTA ENMIENDA ABRE Y NADIE VOTÓ TODAVÍA — está en el §5 del
-      handoff, resumido acá porque cambia el alcance:
-        · **1-6 por ítem no sirve para todas las categorías.** Anda para comida;
-          1-6 balas de 5.45 no es stock, es una anécdota. Hace falta un rango
-          por categoría, y nadie lo eligió.
-        · **«Un par de armas ARC9 EFT» NO es una categoría.** `weapons` trae
-          todo lo capturado. O es "N sorteadas de la categoría" o es una lista
-          de ids explícita — y son dos cosas distintas.
-        · **Las armas no son stackeables**: `AttachTrader` les crea una
-          instancia por unidad con su condición. Un sorteo sobre ellas no se
-          comporta como sobre un stack.
+      LAS CANTIDADES, VOTADAS EL MISMO DÍA (el detalle y sus trampas, en el §5
+      del handoff):
+        · `food` — 1 a 6 por ítem.
+        · `medical` — 1 a 5 de cada uno de los **4** ítems de Coagulant.
+        · `ammo` — 1 a 3 **STACKS** por tipo. Ojo: el `value` de la munición es
+          POR RONDA y el stack lo fija `max_stack` (9 mm = 120), así que
+          "3 stacks" son 360 rondas. Se siembra como N líneas de `max_stack`.
+        · **armas EFT — NO es la categoría `weapons`**: es un sorteo sobre las
+          clases `arc9_eft_*`, **2** de {melee + granadas} y **6** del resto.
+          Un cubo vacío no es un error y sin el pack no se vende ninguna — la
+          ruta del blob que ya no existe está cubierta por Cargo.
+          El campo que clasifica es `SWEP.SubCategory` (no `Category`, que es
+          uniforme) y su valor es una frase **localizada y con dígito de orden
+          adelante** (`"9Melee weapons"`): comparar contra el texto matchea CERO
+          sin dar error. Se compara por id de frase.
+        · Las armas **no son stackeables**: cada una es su blob, con su ícono y
+          su info; salen 8 armas distintas.
 
       Y UNA PREGUNTA QUE NO ES DE ACÁ: el autor también se preguntó si no
       convendría que un `value = 0` signifique "se regala" y que el trader filtre
