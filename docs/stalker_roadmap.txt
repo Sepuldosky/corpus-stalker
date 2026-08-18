@@ -490,6 +490,72 @@ orden y con qué criterio de entrada.
       se marca verde de escritorio.
 
 
+      ---------------------------------------------------------------
+      PASADA DE LA RONDA 1 — 20 / 24. QUEDA ABIERTA LA RONDA 2
+      (2026-08-18).
+      ---------------------------------------------------------------
+      El detalle vive en docs/CHANGELOG.md; acá va el rumbo.
+
+      CERRÓ el grueso, y sobre el catálogo REAL: los 12 tipos de munición en
+      líneas de exactamente su max_stack (la trampa de "stack no es unidad"
+      medida tipo por tipo), los 6 médicos, las 8 armas sorteadas sobre un
+      padrón de **214** clases ARC9 EFT —dos veces las 99 que se habían
+      censado de escritorio, y con el cubo de melee POBLADO, que en dev/other
+      estaba en cero—, el aislamiento de la subclase, el ciclo del reloj con
+      su ventana, la convar en 0, el respawn, el drenado, y las dos
+      regresiones de la base. El autor además le integró la VOZ al Hawaiano
+      durante la pasada.
+
+      LO QUE ABRE LA RONDA 2, y son tres cosas de distinta naturaleza:
+
+        1. **EL +USE DURANTE LA VENTANA (única FALLA).** El autor ve la
+           pantalla de trade cuando aprieta E con el trader restockeando. Lo
+           que el código SÍ permite afirmar —censado— es que no salió de una
+           apertura nueva: `Trade.OpenFor` es la única puerta que manda
+           NET_TRADE_OPEN y el gate de la ventana sale antes de llamarla.
+           Quedan tres causas y ninguna se elige sin medir: el PANEL VIEJO que
+           nunca se cerró (la deuda declarada: `trade_close` es
+           cliente→server únicamente), OTRO trader —cada uno tiene su propio
+           reloj y la ronda 1 pidió spawnear dos—, o una E fuera de ventana.
+           ⇒ **Esta pasada contestó el sub-voto de la entrada #65 de Cargo**
+             (`Trade.CloseFor`), que se había dejado para después JUSTAMENTE
+             para que lo contestara: **el panel muerto molesta, y molesta como
+             una ventana que parece reabrirse**. La #65 sube de prioridad.
+           ⇒ Y del lado de acá, lo que falta primero es un instrumento que
+             imprima CONTRA QUÉ está midiendo: qué entidad y cuántos segundos
+             faltan, en el instante de apretar la tecla.
+
+        2. **DOS CONTROLES QUE NO DISCRIMINABAN, y uno lo cazó el autor.**
+           · El de blobs contaba el TOTAL global de instancias vivas —que
+             incluye las del jugador y las de todo lo demás— o sea un número
+             cuyo valor sano y cuyo valor roto se parecen. El autor desconfió
+             con el A/B correcto: le vendió algo y no se movió, cuando vender
+             MUEVE un blob y no lo crea. Lo reemplaza un control por
+             IDENTIDAD: anotar los uid de la repisa antes del re-sorteo y
+             exigir que después ninguno siga vivo.
+           · El de la repisa del Hawaiano contaba `#ST` y salió **14 con
+             criterio 15** — y se marcó PASA. La aritmética no deja lugar (16
+             defs de food menos el dev = 15 líneas stackeables = 15 entradas),
+             así que algo la tocó entre la siembra y la lectura, casi seguro
+             una compra. **Contar la repisa mide la repisa AHORA, no la
+             siembra**, y el comercio la cambia. El criterio pasa a salir del
+             LOG, que ya imprime "N sembradas".
+
+        3. **EL MODELO DEL HAWAIANO SE CAMBIA.** Reporte del autor: baja
+           calidad, texturas pobres y sin expresiones — lo último coincide con
+           lo medido (`numflexdesc = 0`), así que la fila de flexes quedó SIN
+           CORRER y **se re-mide sobre otro .mdl, no sobre éste**. El autor va
+           a buscar primero un pack del Workshop con modelos de Anomaly ya
+           riggeados, para no pagar el port desde GAMMA. Del lado del código
+           esto es UNA línea (`ENT.TraderModel`); lo que hay que medir del
+           reemplazo antes de citarlo es lo mismo que se midió de éste:
+           flexes, pose params y qué animaciones incluye.
+
+      Y sigue SIN CORRER, por decisión del autor y sin acreditarse con nada:
+      la rama sin el pack ARC9 EFT montado. Hoy no hay ninguna medición EN
+      JUEGO de que el cubo vacío degrade sin romper — sólo la de escritorio.
+
+
 2. DESPUÉS — LOS DOMINIOS INVENTARIADOS
 -----------------------------------------
 

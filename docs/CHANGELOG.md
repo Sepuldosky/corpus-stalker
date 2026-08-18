@@ -530,7 +530,7 @@ COR-5, COR-12 y el contrato de trade que ya existían.
   · **Cada sorteo LOGUEA LA CUENTA**, no la ausencia. Es contrato de CRG-69 y no prolijidad: una
     lista vacía es ambigua —categoría sin registrar, categoría vacía y typo en el nombre son la
     misma respuesta— y sin la cuenta, «el addon no está montado» y «mi filtro no matchea nada» se
-    leen igual. **[PENDIENTE]**
+    leen igual. **[APLICADO 2026-08-18]**
 
 - PARCHE 2 — feat(npc): **el catálogo del trader es un MÉTODO (`ENT:TraderStockPlan()`) y no un
   campo, y la razón es del ENGINE.** Empezó siendo dos campos declarativos
@@ -544,7 +544,7 @@ COR-5, COR-12 y el contrato de trade que ya existían.
   entera entrando como índice 2. **El trader de comida habría vendido medicinas y servido el pan en
   stacks de 120, sin un solo error.** Una función no se mergea: el hijo que la define la pisa
   entera. La misma trampa vale para `ENT.TraderIdles`, que ya existía — queda declarada en el
-  header aunque hoy no muerda. **[PENDIENTE]**
+  header aunque hoy no muerda. **[APLICADO 2026-08-18]** — la fila 04 imprimió `1  food  nil  nil`.
 
 - PARCHE 3 — feat(npc): **el re-sorteo, con UN SOLO RELOJ que NADA reinicia** (S3). Diseño votado
   entero el 2026-08-18, y es la tercera propuesta: no acota el exploit de diferir el restock, **lo
@@ -573,7 +573,7 @@ COR-5, COR-12 y el contrato de trade que ya existían.
   · **La trampa que el `OnKilled` de al lado ya conocía:** antes de vaciar el stock hay que borrar
     las INSTANCIAS de las entradas con `uid`. Sin eso, cada re-sorteo filtra blobs en `data/` para
     siempre — y con un re-sorteo cada veinte minutos eso crece solo. Es el mismo cuidado, aplicado a
-    la otra puerta por la que ahora se borra stock. **[PENDIENTE]**
+    la otra puerta por la que ahora se borra stock. **[APLICADO 2026-08-18 — PARCIAL]** La ventana, el ciclo, el drenado, la convar en 0 y el respawn pasaron (filas 15/17/19/20/21). **El +USE durante la ventana FALLÓ (16)** y el borrado de instancias quedó **sin medir** porque su control no discriminaba (18) — ver el bloque de la pasada, al final.
 
 - PARCHE 4 — feat(npc): **`lua/entities/corpus_stalker_hawaiian.lua`** (S1) — el Hawaiano, trader
   de comestibles y **primera subclase** del trader (STK-5). Vende todo lo que declare
@@ -586,7 +586,7 @@ COR-5, COR-12 y el contrato de trade que ya existían.
     este trader NO parpadea ni mueve la boca** —es del modelo, la base degrada en silencio, y NO se
     marca verde en la planilla como si funcionara—; y sí incluye `m_anm` y `humans/male_shared`, de
     donde salen `head_yaw`/`head_pitch` y los idles de pie, así que la mirada y la rotación de idles
-    tienen que andar igual que en Sidorovich. **[PENDIENTE]**
+    tienen que andar igual que en Sidorovich. **[APLICADO 2026-08-18]** — spawnea, mira, abre y muere (fila 05), y **el autor le integró la voz durante la pasada** (PARCHE 8). La fila de flexes quedó SIN CORRER y se re-mide sobre OTRO `.mdl`: el modelo es de baja calidad y el autor va a buscar uno mejor.
 
 - PARCHE 5 — feat(npc): **Sidorovich re-catalogado** (S5/S6). Pierde el `ENT.TraderStock` de ítems
   DEV —que vuelve al trader DEMO de Cargo, de donde había salido— y gana:
@@ -608,7 +608,7 @@ COR-5, COR-12 y el contrato de trade que ya existían.
     estuviera instalado. Además la subcategoría se resuelve **caminando la cadena `Base` con
     `weapons.GetStored`**, porque `weapons.GetList()` devuelve las tablas crudas y 9 de 99
     spawnables heredan su `SubCategory` (`arc9_eft_cr50ds` la hereda de `arc9_eft_cr200ds`).
-    **[PENDIENTE]**
+    **[APLICADO 2026-08-18]** — filas 11/12/13/23, y sobre un padrón de **214** clases, no las 99 que se censaron de escritorio.
 
 - PARCHE 6 — fix(docs): **corrección de una medición de la sesión anterior, y del mismo tipo que la
   que corrige.** El registro del 2.º intento decía que en la localización base del pack
@@ -664,3 +664,111 @@ contra el que se diseñó la comparación por id.
 **Lo que la sonda NO mide, y no puede:** el modelo, las voces, la UI de trade, el `AttachTrader` de
 verdad, el `ClearViewers` de verdad, el spawn del NextBot y el +USE. Todo eso es la pasada del
 autor, y la planilla `dev/checks/stalker-trader-comida-r1.html` lo separa explícitamente.
+
+
+---
+
+## LA PASADA DE LA RONDA 1 — 20 / 24, y los tres que no cerraron — 2026-08-18
+
+Planilla `dev/checks/stalker-trader-comida-r1.html`, corrida por el autor: **20 PASA · 1 FALLA ·
+3 SIN CORRER**. Los siete parches de arriba pasan a **[APLICADO 2026-08-18]** salvo lo que este
+bloque deja explícitamente abierto — y lo que queda abierto es **más interesante que lo que
+cerró**, porque dos de las tres filas que no cerraron fallaron por el INSTRUMENTO y no por el
+código.
+
+### Lo que cerró, y con qué números
+
+**El mecanismo se midió contra el catálogo REAL, que no es el que la sonda supuso.** La sonda de
+escritorio usó 18 tipos de munición inventados; el servidor tiene **12** (`corpus_cargo_ammo.lua`,
+contados: Pistol · SMG1 · AR2 · Buckshot · 357 · XBowBolt · RPG_Round · SMG1_Grenade · AR2AltFire ·
+SniperPenetratedRound · SniperRound · AirboatGun) más `cargo_dev_ammo_9mm`. El log de la pasada
+dice **13 defs registradas, 12 sembradas, 1 excluida por prefijo**, que es exactamente eso. Que el
+número de la sonda no coincidiera y el mecanismo sí es la diferencia entre un stub y una maqueta:
+el stub estaba declarado como stand-in y la fila que importaba —*una línea por stack, de exactamente
+`max_stack`*— se verificó sobre los 12 reales.
+
+- **La aritmética de stacks (S5), verificada tipo por tipo.** Los 12 salieron con entre 1 y 3
+  líneas y **todas iguales a su `max_stack`**: `357 24/24` · `airboatgun 50/50` ·
+  `ar2 60/60 60/60` · `rpg_round 2/2 2/2 2/2` · `pistol 120/120 120/120` … Ni una línea de
+  `max_stack × N`, que era el caso no medido que esta forma existía para evitar.
+- **Medicina:** 7 defs registradas, 6 sembradas, 1 excluida — los 4 de Coagulant más
+  `cargo_hl2_healthkit` y `cargo_hl2_healthvial`.
+- **Las 8 armas (S6), y el padrón del autor es DOS VECES el que se censó de escritorio.**
+  `padrón de armas 'arc9_eft_*' = 214 clases spawnables`, contra las 99 de `dev/other/` — el aviso
+  de que el censo local era una muestra parcial y no el roster valía. Cubo 1: **49 candidatas**
+  (melee + granadas), 2 sorteadas; cubo 2: **165**, 6 sorteadas. Salieron
+  `melee_wycc` y `melee_m2` del primero y seis del resto, las ocho con instancia propia.
+  **Y ese 49 mata de paso una duda del censo:** `dev/other/` tenía melee en CERO, así que la única
+  evidencia de que el cubo funcionaba era negativa; acá salió poblado y sorteando.
+- **El aislamiento de la subclase (la trampa de `TableInherit`)**: `1 food nil nil` — una
+  categoría, sin `stacks` heredado y sin bloque de armas. La razón por la que el catálogo es un
+  método y no un campo queda confirmada en juego, no sólo en la sonda.
+- **El reloj**: la ventana avisa y expulsa (15), al llegar a cero re-sortea y vuelve a abrir (17),
+  un trader drenado NO se re-abastece en el próximo +USE (19), la convar en 0 apaga el ciclo
+  entero (20) y el respawn no re-sortea al segundo (21). Más las dos regresiones de la base: no
+  derrama stock al morir (22) y el trader DEMO de Cargo conserva sus nueve ítems (23).
+- **El comercio de verdad** (24) y los 15 precios llegando a Cargo (`food 16 con value 16`, 02).
+
+### PARCHE 8 — la voz del Hawaiano YA EXISTE, y el doc decía lo contrario
+
+El autor le integró sus `.ogg` durante la pasada: *«El hawaiano sí tiene voz, se la integré, todo
+eso funciona perfecto»*. La fila 09 medía lo NEGATIVO —que no hablara con la voz de Sidorovich— y
+eso sigue valiendo; lo que caducó es la premisa de que las diez carpetas estaban vacías.
+`docs/ASSETS.md` decía **«0 — carpetas creadas y VACÍAS»** y ahora dice que están pobladas y
+verificadas en juego. **[APLICADO 2026-08-18]**
+
+### Los tres que no cerraron
+
+**1. FALLA (fila 16) — el +USE durante la ventana.** Reporte textual: *«se vuelve a abrir la misma
+ventana, o sea molesta visualmente como un 1 segundo pero sigue siendo la misma ventana»*.
+
+**Lo que SÍ se puede afirmar leyendo el código, y acota el problema a tres candidatos:** durante la
+ventana `SidorUsar` sale antes de `Trade.OpenFor`, y **`OpenFor` es la única puerta que manda
+`NET_TRADE_OPEN`** — censado: no hay otro camino en Cargo que abra la pantalla de trade, y el único
+`PlayerUse` del módulo (`corpus_cargo_capture.lua`) sólo atiende ítems, munición de mundo y armas
+sueltas, nunca un trader. ⇒ **Lo que el autor vio NO salió de una apertura nueva de ese trader.**
+Quedan tres causas, y **ninguna se elige sin medir**:
+  a) **El panel viejo, que nunca se cerró.** Es la deuda declarada desde el principio:
+     `ClearViewers` expulsa *funcionalmente* pero el net `trade_close` es cliente→server
+     únicamente, así que la ventana sigue DIBUJADA hasta que el jugador la cierre a mano. Lo que la
+     saca es `Trade.CloseFor(ply, trader)` — **entrada #65 del roadmap de Cargo**, y el orden votado
+     era justamente que esta pasada dijera si el panel muerto molesta. **Dijo que sí.**
+  b) **Otro trader.** La fila 07 pide spawnear un segundo Hawaiano y cada trader tiene su propio
+     reloj: apretarle la E al que NO está en ventana abre una pantalla idéntica.
+  c) **Fuera de ventana.** Con `restock 60 / warn 20` la ventana dura 20 s de cada 60; si la E cayó
+     en los otros 40, abrir es lo correcto.
+La fila no discrimina entre las tres porque **no imprime contra qué está midiendo** — ni qué
+entidad ni cuántos segundos faltan. Eso se arregla en la ronda 2 con un comando que lo diga.
+**[PENDIENTE — ronda 2]**
+
+**2. SIN CORRER (fila 18) — el control de blobs no discriminaba, y el autor lo cazó.** Su nota:
+*«ambos dicen blobs vivos 55, el instrumento puede estar malo, porque le vendí algo y no cambió
+nada»*. Tiene razón, y por dos motivos independientes:
+  · **Contaba el total global de `Instances._live`**, que incluye los blobs del jugador, de otros
+    contenedores y de todo lo demás — un total que se espera aproximadamente constante. Un control
+    cuyo valor sano y cuyo valor roto se parecen no mide nada.
+  · **Y el A/B que el autor usó para desconfiar es correcto**: venderle algo al trader MUEVE el
+    blob, no lo crea ni lo borra, así que el número tiene que quedarse quieto. Que se quedara
+    quieto probaba que el instrumento no reaccionaba a nada.
+  ⇒ El control que sí discrimina es **por identidad y no por cuenta**: anotar los `uid` que están
+    en la repisa ANTES del re-sorteo y verificar que después NINGUNO siga en `_live`. Va a la
+    ronda 2. **[PENDIENTE — ronda 2]**
+
+**3. SIN CORRER (fila 14) — sin el pack EFT montado.** Decisión del autor: *«no lo voy a probar por
+mientras»*. Exige desmontar el pack y reiniciar, y es la rama que degrada. Queda pendiente y **no
+se acredita con nada**: hoy no hay ninguna medición de que el cubo vacío no rompa en juego — sólo
+la de escritorio. **[PENDIENTE]**
+
+### Y una fila que dice PASA con el número equivocado
+
+**La 06 (`entradas 14`) tenía como criterio `entradas 15`, y se marcó PASA.** El aritmética no
+deja lugar: 16 defs de `food`, menos `cargo_dev_food` por prefijo, son 15 líneas y las 15 son
+stackeables, o sea **15 entradas exactas en una repisa recién sembrada**. Un 14 significa que algo
+la tocó entre la siembra y la lectura — lo más probable, que se le comprara o se le sacara una
+unidad mientras la pantalla estaba abierta.
+
+**El defecto es de la fila, no del código, y es del tipo que este proyecto persigue:** *contar la
+repisa mide la repisa AHORA, no la siembra*, y el comercio la cambia. La cuenta de la siembra ya se
+imprime —el log dice «N sembradas»— y la fila estaba leyendo la otra. En la ronda 2 el criterio
+sale del LOG y no del `#ST`, y el `#ST` queda como dato secundario. Sin eso, la fila puede seguir
+saliendo verde con cualquier número. **[PENDIENTE — ronda 2]**
