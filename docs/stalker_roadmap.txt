@@ -283,7 +283,102 @@ orden y con qué criterio de entrada.
            estable, y `GetPhrase` vive en `common/` ⇒ **existe en server**, que
            es donde se siembra el stock.
 
-      DEUDA MENOR QUE VIAJA CON ESTO, del mismo día y del mismo lugar: dos defs
+      ---------------------------------------------------------------
+      SEGUNDO INTENTO, MISMO DÍA — EN PAUSA OTRA VEZ, Y POR LA MISMA FORMA
+      DE BLOQUEANTE EN OTRA SUPERFICIE (2026-08-18).
+      ---------------------------------------------------------------
+      Con la API de enumeración de Cargo ya escrita (su #63), se volvió a abrir
+      la ejecución. La regla por categoría quedaba escribible para comida,
+      medicina y munición — pero apareció el mismo agujero corrido un casillero:
+      **las ARMAS no están EN el catálogo hasta que alguien tuvo una en la
+      mano.** Un arma capturada no tiene código propio: su def es AUTOGEN y la
+      acuñaba `EnsureDef`, una función LOCAL de `corpus_cargo_capture.lua`, sin
+      puerta pública y desde afuera inalcanzable.
+      EL SÍNTOMA, que es lo que lo vuelve caro: `Trade.AttachTrader` resuelve
+      cada línea de stock con `Items.Get`, no la encontraba, logueaba "stock
+      desconocido" y salteaba EN SILENCIO. O sea que el trader en un server
+      fresco vendía CERO armas CON EL PACK ARC9 EFT MONTADO ENTERO, y eso se lee
+      exactamente igual que "el pack no está montado" — que es justo la ruta que
+      el §5.6 del handoff declara aceptable. Un falso negativo que además le
+      echa la culpa al pack.
+      VOTO DEL AUTOR, textual: *«Si es bloqueante paremos aca, guarda el prompt
+      original, y solucionemos la bloqueante de cargo»*. ⇒ Se escribió del lado
+      de Cargo (su roadmap **#64**, CRG-70: `Capture.ItemIdFor(class)`, que
+      acuña la def si no existe y devuelve id o nil + motivo) y este tramo queda
+      pendiente. NO se escribió una sola línea de este repo, otra vez.
+
+      LA PREGUNTA QUE EL AUTOR HIZO AL VER EL HALLAZGO —"¿pasa lo mismo con el
+      resto de los ítems, sean médicos o comida?"— CONTESTADA Y MEDIDA: **no.**
+      Censo con `rg --no-ignore` sobre TODOS los `Items.Register` del workspace:
+      comida (Craving), medicina (Coagulant), munición y suministros (Cargo),
+      las 61 NVG y los attachments de ARC9 se registran EN EL ARRANQUE, desde
+      archivos `shared`, y existen mientras su addon esté montado. Las armas
+      capturadas `wpn_*` son la ÚNICA familia acuñada en runtime: `autogen =
+      true` aparece UNA SOLA VEZ en todo el árbol de Cargo. El agujero era de
+      una familia, no del catálogo.
+
+      LO QUE QUEDÓ VOTADO EN ESTA SESIÓN:
+        · **La exclusión del stock DEV es una lista de PREFIJOS** declarada en la
+          clase base y pisable por subclase: `ENT.TraderStockExcluir =
+          { "cargo_dev_" }`. Se eligió sobre la lista de ids exactos porque no
+          hay que tocarla cuando Cargo agregue un `cargo_dev_loquesea` — y si se
+          olvidara, el ítem entraría sin que nada falle.
+
+      EL DISEÑO DEL RE-SORTEO, VOTADO ENTERO EL MISMO DÍA — Y NO ES NINGUNA DE
+      LAS DOS COSAS QUE SE HABÍAN ESCRITO ANTES. El detalle vive en el §-2.H
+      del handoff, que es lo que hay que leer para escribir S3; acá va el rumbo
+      y por qué ganó.
+        · Primero el autor propuso **dos timers** (el de 20 min siempre
+          corriendo y un segundo que se reinicia al abrir la ventana; el
+          restock exige los dos en cero), más no restockear mientras alguien
+          mire y expulsar por time-out. Pidió el análisis de teoría de juegos y
+          se hizo — de ahí salieron tres cosas: que el bloqueo infinito **no
+          necesita jugadores coordinados** (le alcanza uno reabriendo la
+          ventana), que el time-out tapa OTRA rama que la que el segundo timer
+          abre, y que **expulsar no se podía hoy** porque el net `trade_close`
+          es cliente→server únicamente.
+        · Leyendo eso, el autor propuso una TERCERA, y es la que quedó: *«que se
+          mantenga el primer timer como lo único que restockea, pero hay una
+          ventana de tiempo donde el trader expulsa al jugador de la pantalla de
+          trading y se rehúsa a tradear porque está restockeando»*, con aviso en
+          pantalla y una línea de `trade_fail`.
+        · **POR QUÉ ES MEJOR, y vale escribirlo: no acota el exploit, lo hace
+          inexistente.** Un restock que no se puede diferir no tiene nada que
+          bloquear — se caen el segundo timer, el techo al diferimiento y el
+          análisis entero. Y de yapa vuelve VISIBLE un evento que en los otros
+          dos diseños pasaba de fondo.
+        · **Y ELIMINA UNA SUPERFICIE DE CARGO, por construcción:** como expulsa
+          ANTES de re-sortear, nadie está mirando cuando el stock cambia, así
+          que el re-sync público de viewers que el análisis pedía **se cayó
+          entero**.
+        · **QUEDA DEROGADO el voto del 2026-08-17 de que vender reinicia el
+          reloj.** El reloj es intocable. Lo que dolía —perder lo vendido a los
+          diez segundos— lo resuelve el aviso: el jugador VE que el restock
+          viene.
+        · Las dos perillas: `corpus_stalker_trader_restock` (1200 s, 0 = sin
+          re-sorteo) y `corpus_stalker_trader_restock_warn` (30 s), las dos
+          ARCHIVE. Costo declarado: el trader queda inhabilitado el **2,5%** del
+          ciclo.
+
+      LO QUE ESTO LE PIDE A CARGO, y NO bloquea nada: `Trade.CloseFor(ply,
+      trader)`, para que el panel del expulsado se cierre solo en vez de quedar
+      dibujado. Abierta como **entrada #65 de su roadmap** — y salda además una
+      deuda ya declarada en el header de la entidad base (el trader que muere
+      con pantallas abiertas). S3 se escribe igual sin ella: `ClearViewers` deja
+      al jugador funcionalmente expulsado y `Inventory.Notice` le explica por
+      qué. Las dos cosas medidas y públicas hoy.
+
+      Y LA #61 DE CARGO (multiplicador de precio por categoría) quedó
+      **RATIFICADA EN RUMBO** en la misma ronda — es la que la comida necesita
+      para no ser económicamente trivial. Sus sub-votos se resuelven en la ronda
+      que la escriba. La #62 sigue PEDIDA: este tramo no la usa.
+
+      CRITERIO DE ENTRADA, actualizado: son DOS entradas de Cargo esperando
+      pasada en juego (sus CHANGELOG 67 y 68). Se puede escribir igual —las dos
+      APIs están en el árbol y el harness las cubre—, pero la planilla tiene que
+      DECLARARLO, no marcarlo verde. **Del diseño ya no falta votar nada.**
+
+            DEUDA MENOR QUE VIAJA CON ESTO, del mismo día y del mismo lugar: dos defs
       de Craving declaran el sonido de consumo equivocado (`cola_bottle` y
       `cola_glass` suenan a lata siendo botellas). Es data de Craving y se
       arregla allá, no acá — pero si este trader las pone en circulación, se van
