@@ -19,7 +19,7 @@ subir, la respuesta casi siempre es exponer un punto de extensión en el módulo
 
 ## Estado
 
-**Scaffold.** Hoy hay cuatro archivos Lua: `lua/autorun/corpus_stalker_playermodels.lua` (registro
+**Scaffold.** Hoy hay **cinco** archivos Lua: `lua/autorun/corpus_stalker_playermodels.lua` (registro
 de playermodels), `lua/autorun/corpus_stalker_itemmodels.lua` (re-vestido de ítems genéricos con
 modelos de la Zona vía `Cargo.Items.SetModel` — Cargo entry 34: **hoy sólo las dos mochilas**,
 mapeo chica→backpack-1 / grande→backpack-2 confirmado en juego el 2026-07-23. La sustitución de
@@ -38,7 +38,15 @@ CHANGELOG); cuelga el comercio con el mismo
 **voz estandarizada por carpetas de acción** (`sound/npc/sidorovich/<accion>/`, about.txt de
 la carpeta; incluye pain/death y trade_fail a la espera de líneas). Confirmado en juego el
 2026-07-24 (checklist a-f ✓); los ajustes post-pasada (anim, idles de pie, vida, convar, voz
-por carpetas) están **[PENDIENTE]** de su propia pasada. Además, los assets que consumen Cargo y Craving (modelos de
+por carpetas) están **[PENDIENTE]** de su propia pasada. Desde el 2026-08-18 la base sabe además
+**sortear su stock por categoría y re-sortearlo** (convars `corpus_stalker_trader_restock` /
+`_restock_warn`), y Sidorovich cambió de catálogo: munición, medicina y armas ARC9 EFT en vez del
+kit DEV. **El catálogo de un trader se declara con el MÉTODO `ENT:TraderStockPlan()` y no con un
+campo de tabla** — `scripted_ents.TableInherit` mergea las tablas del padre en vez de dejar que la
+subclase las pise, así que un campo habría hecho que el trader de comida vendiera también la
+medicina de Sidorovich, sin error. Y `lua/entities/corpus_stalker_hawaiian.lua` — **el Hawaiano**,
+trader de comestibles y primera SUBCLASE (roadmap [1]): vende todo lo que declare
+`category = "food"`, sin una sola función propia. Todo eso **[PENDIENTE]** de su pasada. Además, los assets que consumen Cargo y Craving (modelos de
 ítem, voces de Sidorovich, música de radio sin consumidor todavía). Las demás entidades de la
 Zona (anomalías, artefactos…) siguen **inventariadas y analizadas, pero no escritas**.
 

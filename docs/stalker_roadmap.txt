@@ -388,6 +388,108 @@ orden y con qué criterio de entrada.
       a oír mucho más. Anotado en `corpus-craving/docs/craving_estado.md`.
 
 
+      ---------------------------------------------------------------
+      TERCER INTENTO — ESCRITO. LOS SEIS SLICES BAJADOS, [PENDIENTE] DE LA
+      PASADA DEL AUTOR (2026-08-18).
+      ---------------------------------------------------------------
+      El detalle por parche está en docs/CHANGELOG.md; acá va el rumbo.
+
+      S1 a S6 escritos, y el mecanismo quedó donde tenía que quedar: en la
+      BASE. Los dos traders declaran lo suyo y el código es uno solo.
+        · `lua/entities/corpus_stalker_hawaiian.lua` — el Hawaiano, primera
+          SUBCLASE del trader y **sin una sola función propia**: mirada,
+          flexes, respawn, voz, +USE, trade y re-sorteo son heredados. Que
+          alcance con pisar campos es el contrato de subclase funcionando.
+        · Sidorovich pierde el stock DEV (vuelve al trader demo de Cargo) y
+          gana munición por stacks, medicina por unidades y 8 armas EFT.
+        · Re-sorteo con UN SOLO RELOJ que nada reinicia, más la ventana de
+          cierre que expulsa y avisa. Dos convars nuevas.
+        · Los 15 precios entraron en `corpus-craving/` — con la línea de
+          reenvío que faltaba, sin la cual los números no llegaban a Cargo.
+
+      DOS HALLAZGOS DE LA SESIÓN, y los dos son del tipo que este roadmap
+      guarda porque cambian cómo se escribe lo que sigue:
+
+        1. **EL CATÁLOGO DE UN TRADER NO PUEDE SER UN CAMPO DE TABLA.** El
+           handoff proponía `ENT.TraderStockCategorias` / `TraderStockArmas`
+           declarativos, y al escribir la subclase apareció que NO FUNCIONA:
+           `scripted_ents.TableInherit` (leído en la fuente del engine) copia
+           del padre toda clave que al hijo le falte **y recurse dentro de las
+           tablas**. La lista del Hawaiano no habría pisado la de Sidorovich:
+           se habría MERGEADO con ella — el `stacks = true` de la munición
+           metiéndose en la spec de comida y la entrada `medical` entera
+           entrando de segunda. El trader de comida habría vendido medicinas y
+           servido el pan en stacks de 120, **sin un solo error**. Quedó como
+           un MÉTODO (`ENT:TraderStockPlan()`), que el hijo pisa entero.
+           ⇒ La regla, y vale para cualquier subclase futura de esta entidad:
+             **un campo de TABLA en una clase base es un default que se mergea,
+             no un valor que se pisa.** `ENT.TraderIdles` tiene la misma forma;
+             hoy no muerde (todas las poses son de pie y parecidas) y quedó
+             declarado en el header del archivo.
+
+        2. **UNA MEDICIÓN DE LA RONDA ANTERIOR ERA FALSA, Y ES DEL MISMO TIPO
+           QUE LA QUE CORREGÍA.** El 2.º intento anotó que en la localización
+           base del pack `eft_subcat_melee` vale "⠀Melee" (con un braille blank
+           adelante) y no el "9Melee weapons" del handoff. Ese bloque de
+           `arc9_eft_base.lua` está **adentro de un `--[[ … ]]--`**: es un
+           comentario y no registra nada. El valor vivo es el del archivo de
+           localización real, y ahí sí dice "9Melee weapons" — dos veces, gana
+           el segundo. No cambia el diseño (comparar por id de frase sigue
+           siendo lo único estable, ahora por dos motivos), pero sí lo que el
+           doc afirmaba haber medido. **Leer un valor no es leer el valor VIVO:
+           un `L[...]` adentro de un comentario se lee igual que uno que corre.**
+
+      LO QUE QUEDA ABIERTO, y ninguna de las dos bloquea la pasada:
+
+        a) **EL DEFAULT DE 5 USD DEL VOTO (e) NO SE ESCRIBIÓ, Y HAY QUE VOTAR
+           OTRA VEZ — porque el mecanismo que hacía falta no existe.** El voto
+           decía que ese default «va donde el trader arma su stock» y no en
+           Craving. Medido: **el precio sale ÚNICA Y EXCLUSIVAMENTE de
+           `def.value`** (`Trade.UnitPrice` → `Items.Get(entry.id).value`, la
+           misma función pura en los dos realms), y las defs se entregan POR
+           REFERENCIA. O sea que un trader que quisiera aplicar un default
+           tendría que ESCRIBIR `def.value = 5` sobre la def de otro módulo:
+           un efecto global y permanente que volvería comerciable ese ítem para
+           todo el mundo, pisando el contrato 13 de Cargo (ausencia de `value`
+           = «no está a la venta», NO «gratis»). Eso es exactamente lo que
+           STK-1 prohíbe hacer desde acá.
+           ⇒ Lo escrito, que es lo honesto y no cuesta nada hoy: un ítem sin
+             `value` **no se siembra**, y el sorteo loguea cuántos quedaron
+             afuera por eso. **Hoy quedan afuera CERO**: los 15 comestibles ya
+             tienen precio, los 6 médicos también y las 18 municiones también.
+             El default sólo tocaría a una comida de un addon de terceros que
+             no declare precio, y ese caso todavía no existe.
+           ⇒ Si el autor lo sigue queriendo, es superficie de CARGO —un default
+             por categoría, o un override de precio por trader— y se negocia en
+             SU repo, probablemente junto a la #61 (multiplicador por
+             categoría), que ya está ratificada en rumbo y toca el mismo lugar.
+
+        b) **`Trade.ContainerOf(trader)` — un pedido chico y nuevo para Cargo.**
+           Al re-sortear hay que RENDERIZAR los blobs recién acuñados, o una
+           instancia que nadie comerció viaja a un savegame como entrada sin
+           blob y vuelve como el fantasma que la degradación honesta descarta.
+           `Containers.Save` es pública y pide el CONTENEDOR, pero desde afuera
+           sólo hay puerta a su lista de ítems (`Trade.StockOf`). Hoy se usa el
+           marcador que `Containers.Attach` deja en la propia entidad, y sólo
+           inmediatamente después de un AttachTrader válido de la sesión — anda,
+           pero es lo único de este archivo que toca algo que Cargo no publicó
+           para esto. Sin ese accesor, la ruta degrada a no renderizar, que es
+           lo que pasaba antes. Va al roadmap de Cargo; **no bloquea nada**.
+
+      Y sigue afuera, como ya estaba: la **#65 de Cargo** (`Trade.CloseFor`,
+      para que el panel del expulsado se cierre solo en vez de quedar
+      dibujado). El orden votado es que vaya DESPUÉS de este tramo, porque
+      quien contesta bien su sub-voto es la pasada en juego de este trader.
+
+      VERIFICACIÓN: planilla `dev/checks/stalker-trader-comida-r1.html`. El
+      harness de Craving quedó en su línea base exacta (435/405, ALL GREEN).
+      **Este repo sigue sin harness offline** — lo que se corrió es una sonda de
+      escritorio, en el scratchpad y sin versionar, que mide el sorteo y el
+      reloj con stubs; lo que necesita el juego (modelo, voces, UI, +USE,
+      AttachTrader y ClearViewers de verdad) está separado en la planilla y NO
+      se marca verde de escritorio.
+
+
 2. DESPUÉS — LOS DOMINIOS INVENTARIADOS
 -----------------------------------------
 

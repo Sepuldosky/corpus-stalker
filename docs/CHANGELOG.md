@@ -500,3 +500,167 @@ volvió a matar — el ciclo completo, no un solo golpe, y eso es lo que discrim
 trabado, porque el defecto viejo se manifestaba justamente en los golpes SIGUIENTES al primero.
 Consola sin una línea del scavenger. Commiteado y pusheado a `origin/main` (`fix(npc): protege el
 hook.Run de OnKilled para que la muerte no dependa de terceros`).
+
+
+---
+
+## PARCHES DE sesión Los dos traders de la Zona: stock sorteado y re-sorteo — 2026-08-18
+
+Entrada **[1]** del roadmap, tercer intento y el primero que escribe código. Los dos anteriores
+midieron el terreno y **no escribieron una línea de este repo**: cada uno frenó por voto del autor
+contra un bloqueante que el handoff no había visto, los dos de la misma forma (una API que Cargo no
+tenía) y los dos en el mismo lugar (sembrar stock). Las dos superficies —`Items.GetAll`/`ByCategory`
+(**CRG-69**) y `Capture.ItemIdFor` (**CRG-70**)— se escribieron en SU repo y pasaron su pasada en
+juego el 2026-08-18 (CHANGELOG 67 y 68 de Cargo, `cargo_selftest` 91 OK y `cargo_selftest_cl`
+93 OK). El tramo entró sin bloqueantes y sin decisiones abiertas.
+
+Guiado por `dev/PROMPT_stalker_trader_comida.txt` v3, cuyo §-2.H es el diseño votado del re-sorteo.
+**Cargo no se tocó** (STK-1) y **no se acuñó ninguna norma nueva**: esto reusa STK-1, STK-3, STK-5,
+COR-5, COR-12 y el contrato de trade que ya existían.
+
+- PARCHE 1 — feat(npc): **`lua/entities/corpus_stalker_sidorovich.lua` aprende stock SORTEADO**
+  (S2 del handoff). El mecanismo va en la BASE y no en la subclase, porque lo usan los dos traders:
+  cada uno declara lo suyo y el código es uno solo. La regla es una REGLA y no una lista — el trader
+  vende todo lo que declare la categoría que declara, así que una comida (o medicina, o munición)
+  que registre mañana cualquier addon entra sola, que es exactamente lo que el autor votó y por qué.
+  · **`ENT.TraderStockExcluir = { "cargo_dev_" }`**, lista de PREFIJOS y no de ids exactos (voto del
+    autor): la regla por categoría le devolvía el kit DEV a los dos traders (`cargo_dev_food` es
+    `food`, `cargo_dev_medkit` es `medical`, `cargo_dev_ammo_9mm` es `ammo`) y con prefijos no hay
+    que tocar nada el día que Cargo agregue un `cargo_dev_loquesea`.
+  · **Cada sorteo LOGUEA LA CUENTA**, no la ausencia. Es contrato de CRG-69 y no prolijidad: una
+    lista vacía es ambigua —categoría sin registrar, categoría vacía y typo en el nombre son la
+    misma respuesta— y sin la cuenta, «el addon no está montado» y «mi filtro no matchea nada» se
+    leen igual. **[PENDIENTE]**
+
+- PARCHE 2 — feat(npc): **el catálogo del trader es un MÉTODO (`ENT:TraderStockPlan()`) y no un
+  campo, y la razón es del ENGINE.** Empezó siendo dos campos declarativos
+  (`ENT.TraderStockCategorias` / `ENT.TraderStockArmas`), que es la forma que el handoff proponía;
+  al escribir la subclase apareció que **no funciona**, leído en la fuente
+  (`garrysmod/lua/includes/modules/scripted_ents.lua`): `TableInherit` copia del padre toda clave
+  que al hijo le falte **y RECURSE dentro de las tablas**. O sea que un
+  `ENT.TraderStockCategorias = { { cat = "food", min = 1, max = 6 } }` en el Hawaiano **no habría
+  pisado** la lista de Sidorovich: se habría MERGEADO con ella — el `stacks = true` de la munición
+  metiéndose adentro de la spec de comida por la recursión sobre el índice 1, y la entrada `medical`
+  entera entrando como índice 2. **El trader de comida habría vendido medicinas y servido el pan en
+  stacks de 120, sin un solo error.** Una función no se mergea: el hijo que la define la pisa
+  entera. La misma trampa vale para `ENT.TraderIdles`, que ya existía — queda declarada en el
+  header aunque hoy no muerda. **[PENDIENTE]**
+
+- PARCHE 3 — feat(npc): **el re-sorteo, con UN SOLO RELOJ que NADA reinicia** (S3). Diseño votado
+  entero el 2026-08-18, y es la tercera propuesta: no acota el exploit de diferir el restock, **lo
+  hace inexistente** — un restock que no se puede diferir no tiene nada que bloquear.
+  · `corpus_stalker_trader_restock` (s, default **1200**, ARCHIVE; **0 = sin re-sorteo** ⇒ el
+    trader cae en la rama de stock fijo, que es la que convive con la persistencia) y
+    `corpus_stalker_trader_restock_warn` (s, default **30**, ARCHIVE).
+  · **La ventana de cierre** son los últimos N segundos: al entrar, una sola vez, se capturan los
+    viewers (por `Trade.HasViewer`, que es pública), se los expulsa con `ClearViewers` —por el
+    helper perezoso `TradeAPI`, nunca directo—, se les avisa por `Inventory.Notice` en inglés y el
+    trader habla `trade_fail`. Durante la ventana el +USE no abre: habla sin `forzar` y sale.
+  · **No hace falta ningún re-sync de viewers, y es consecuencia del diseño y no suerte:** como se
+    expulsa ANTES de re-sortear, nadie está mirando cuando el stock cambia. La superficie
+    `Trade.SyncFor` que el análisis previo pedía a Cargo **se cayó entera**.
+  · **La ventana se acota a la mitad del intervalo.** Un `warn >= intervalo` dejaría al trader
+    cerrado para siempre y eso no puede depender de que nadie escriba mal una convar. El recorte se
+    loguea una vez por par de valores, no por tick.
+  · **El reloj arranca cuando hay REPISA, no en el `Initialize`**: un trader recién respawneado no
+    puede re-sortear un segundo después. Y los plazos se leen contra el valor VIVO de la convar, así
+    que bajarla para verificar surte efecto en el ciclo en curso.
+  · **La condición de siembra es «todavía no sembró», NO «está vacío»**, y la diferencia es un
+    agujero de economía que casi entra: el gancho corre en CADA +USE, así que preguntar por
+    `#stock == 0` le habría regalado una repisa nueva al que le comprara TODO —bastaba vaciarlo y
+    volver a apretar E— y el reloj de los veinte minutos no habría gobernado nada. El marcador de
+    «ya sembró» es el reloj mismo. **Un trader drenado se queda drenado hasta su re-sorteo.**
+  · **La trampa que el `OnKilled` de al lado ya conocía:** antes de vaciar el stock hay que borrar
+    las INSTANCIAS de las entradas con `uid`. Sin eso, cada re-sorteo filtra blobs en `data/` para
+    siempre — y con un re-sorteo cada veinte minutos eso crece solo. Es el mismo cuidado, aplicado a
+    la otra puerta por la que ahora se borra stock. **[PENDIENTE]**
+
+- PARCHE 4 — feat(npc): **`lua/entities/corpus_stalker_hawaiian.lua`** (S1) — el Hawaiano, trader
+  de comestibles y **primera subclase** del trader (STK-5). Vende todo lo que declare
+  `category = "food"`, 1 a 6 por ítem; plata 25.000 (la mitad de Sidorovich);
+  `ENT.VoiceDir = "npc/hawaiian"`, carpetas ya creadas y vacías, así que arranca mudo sin error y
+  **sin fallback a las voces de Sidorovich** (que el trader nuevo hable con la voz del viejo es peor
+  que el silencio). **No tiene una sola función**: mirada, flexes, respawn, voz, +USE, trade y
+  re-sorteo son de la base — eso es el contrato de subclase funcionando.
+  · Dos cosas medidas del `.mdl` (header parseado, no el nombre): **`numflexdesc = 0`, o sea que
+    este trader NO parpadea ni mueve la boca** —es del modelo, la base degrada en silencio, y NO se
+    marca verde en la planilla como si funcionara—; y sí incluye `m_anm` y `humans/male_shared`, de
+    donde salen `head_yaw`/`head_pitch` y los idles de pie, así que la mirada y la rotación de idles
+    tienen que andar igual que en Sidorovich. **[PENDIENTE]**
+
+- PARCHE 5 — feat(npc): **Sidorovich re-catalogado** (S5/S6). Pierde el `ENT.TraderStock` de ítems
+  DEV —que vuelve al trader DEMO de Cargo, de donde había salido— y gana:
+  · **munición**: 1 a 3 **STACKS** por tipo. Y "stack" no es "unidad": el `value` de la munición está
+    declarado POR RONDA y el tamaño lo fija `max_stack`, así que se siembra como **N LÍNEAS de
+    `max_stack`** y no como una línea de `max_stack × N` — tres líneas de 120 dan tres stacks de
+    120, que es lo pedido; la otra forma crearía una entrada de 360 por encima del propio
+    `max_stack` del def, y si Cargo la parte o no **no está medido**. La forma segura es la que no
+    necesita esa respuesta.
+  · **medicina**: 1 a 5 unidades de cada ítem con precio (los 4 de Coagulant más
+    `cargo_hl2_healthkit` y `cargo_hl2_healthvial`).
+  · **8 armas ARC9 EFT**, que NO son una categoría de Cargo: es un sorteo por CLASE, 2 del cubo
+    {melee + granadas} y 6 del resto, sin reposición. Tres cosas que lo sostienen, y ninguna se
+    adivina: la clase va en **minúscula** (`arc9_eft_*`); el campo que clasifica es
+    `SWEP.SubCategory` y no `Category` (uniforme en todo el pack); y **la subcategoría se compara por
+    ID DE FRASE y jamás por texto**, porque su valor es una frase localizada con un dígito de orden
+    pegado adelante (`"9Melee weapons"` en inglés, `"9Chladné zbraně"` en checo) — comparar contra
+    el texto matchea CERO, sin error, y el cubo queda vacío exactamente igual que si el pack no
+    estuviera instalado. Además la subcategoría se resuelve **caminando la cadena `Base` con
+    `weapons.GetStored`**, porque `weapons.GetList()` devuelve las tablas crudas y 9 de 99
+    spawnables heredan su `SubCategory` (`arc9_eft_cr50ds` la hereda de `arc9_eft_cr200ds`).
+    **[PENDIENTE]**
+
+- PARCHE 6 — fix(docs): **corrección de una medición de la sesión anterior, y del mismo tipo que la
+  que corrige.** El registro del 2.º intento decía que en la localización base del pack
+  `eft_subcat_melee` vale `"⠀Melee"` con un BRAILLE BLANK, no el dígito 9. **Ese bloque de
+  `arc9_eft_base.lua` (líneas 417-465) está adentro de un `--[[ … ]]--`: es un comentario y no
+  registra nada.** El valor vivo en inglés es `"9Melee weapons"`, del archivo de localización real
+  (`lua/arc9/common/localization/eft_en.lua`, y el archivo lo declara dos veces — gana el segundo).
+  No cambia el diseño —comparar por id de frase sigue siendo lo único estable, y ahora por dos
+  motivos en vez de uno— pero sí cambia lo que el doc afirmaba haber medido. **[APLICADO
+  2026-08-18]**
+
+- PARCHE 7 — docs(assets): **`docs/ASSETS.md`** gana la fila de `models/npc/stalker/` (el Hawaiano,
+  con lo medido del header y de sus dos `.vmt`) y las líneas de reconstrucción. **Ojo, y es la razón
+  por la que la fila lo dice en negrita:** el `.mdl` vive en `models/npc/stalker/` pero su
+  `cdmaterials` apunta a `models/player/stalker/` — la ruta del archivo y la del material **no
+  coinciden**, y las dos son verbatim (STK-3). El modelo y los materiales quedaron copiados al árbol
+  local; `models/` y `materials/` están en el `.gitignore` (STK-2), así que no viajan en el commit.
+  **[APLICADO 2026-08-18]**
+
+### Los precios de los 15 comestibles (S4) — se editaron en `corpus-craving/`
+
+No es este repo, pero el tramo no cierra sin ellos y la verificación es conjunta. **Sin `value` un
+ítem se LISTA y el server se niega a moverlo**: `Trade.IsTradeable` exige `isnumber(value) and
+value > 0` y la ausencia significa «no está a la venta», NO «gratis». La tabla del §4 del handoff
+entró tal cual (aprobada el 2026-08-18): cinco valores salen de dato publicado (FRED, mediados de
+2026) y diez son estimación **etiquetada como tal en el comentario de cada def**.
+
+Y **no era sólo data**, como el handoff advertía: `corpus_craving_items.lua` arma el
+`Items.Register` campo por campo y no reenviaba `value`, así que sin esa línea los quince números se
+quedaban del lado de Craving y Cargo nunca los veía. Medido, no supuesto: con la línea, las 15 defs
+llegan a Cargo con su `value` y `category = "food"`; **sin ella, las 15 llegan con `value` nil**.
+
+### Verificación
+
+`python dev/harness_craving.py` → **435 OK server / 405 client, ALL GREEN, exit 0** — la línea base
+exacta. Sintaxis GLua de los dos entities y de los seis `shared` de Craving: verde con
+`dev/glua_check.py`, **y el instrumento se controló** (una mutación de una línea lo pone en rojo).
+
+**corpus-stalker no tiene harness offline, y eso sigue siendo cierto.** Lo que se corrió es una
+SONDA de escritorio, en el scratchpad y sin versionar, que carga los dos archivos de entidad con
+stubs de GMod y ejercita lo que se puede medir sin el juego: **48 checks en verde**. Dos cosas la
+vuelven una medición y no una maqueta — el `TableInherit` es **el del engine, copiado literal**, y
+el padrón de armas se **parsea de los `.lua` reales** de `dev/other/` (101 archivos, 99 spawnables)
+con las frases del archivo de localización inglesa real. Cubre: el aislamiento de la subclase, las
+15 líneas de comida en 1-6 con doce sorteos distintos en doce, los 18 tipos de munición en líneas
+de exactamente `max_stack`, los 6 médicos en 1-5 unidades, las 8 armas (2 + 6) sin repetidas y sin
+las dos bases del pack, que `arc9_eft_cr50ds` entre por la cadena `Base`, el ciclo del reloj con su
+expulsión y su borrado de instancias, que un trader drenado NO se re-abastezca en el próximo +USE, el recorte de la ventana, la rama de convar en 0 y la
+degradación sin Cargo. **Y su control negativo: borrando la frase de ARC9, el cubo de melee/granadas
+queda vacío y salen 6 armas en vez de 8, sin un solo error** — que es exactamente el falso verde
+contra el que se diseñó la comparación por id.
+
+**Lo que la sonda NO mide, y no puede:** el modelo, las voces, la UI de trade, el `AttachTrader` de
+verdad, el `ClearViewers` de verdad, el spawn del NextBot y el +USE. Todo eso es la pasada del
+autor, y la planilla `dev/checks/stalker-trader-comida-r1.html` lo separa explícitamente.
