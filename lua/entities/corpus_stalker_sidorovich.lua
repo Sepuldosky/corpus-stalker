@@ -739,7 +739,19 @@ if SERVER then
             if clearFn then clearFn(trader) end
         end
 
-        hook.Run("OnNPCKilled", self, dmginfo:GetAttacker(), dmginfo:GetInflictor())
+        -- PROTEGIDO, y no por prolijidad: esta llamada está ANTES del
+        -- BecomeRagdoll —tiene que estarlo, los listeners necesitan la entidad
+        -- todavía viva— y hook.Run no atrapa errores. Un listener de un tercero
+        -- que explote aborta el resto de OnKilled, y como SidorMuerto ya quedó
+        -- en true arriba, el trader queda de pie con 0 de vida, mudo al USE y
+        -- SIN PODER MORIR NUNCA MÁS: cada golpe posterior vuelve a entrar y
+        -- sale por ese mismo return. Pasó en juego (el scavenger de Caliber
+        -- llamando GetActiveWeapon sobre este nextbot). ProtectedCall reporta
+        -- el error en consola sin frenar la muerte.
+        local atacante, inflictor = dmginfo:GetAttacker(), dmginfo:GetInflictor()
+        ProtectedCall(function()
+            hook.Run("OnNPCKilled", self, atacante, inflictor)
+        end)
 
         -- la línea de muerte sale del cadáver: esta entity se remueve con el
         -- BecomeRagdoll y un EmitSound propio moriría con ella
