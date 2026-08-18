@@ -1,0 +1,205 @@
+CORPUS S.T.A.L.K.E.R. — ROADMAP (BRÚJULA)
+Hacia dónde va el addon de contenido y en qué orden. Qué construir next.
+=====================================================
+Documento vivo. Fija el RUMBO (secuencia estable de lo que sigue).
+El detalle de diseño vive en docs/STALKER_Arquitectura.md — acá NO se duplica;
+solo el orden y el criterio de entrada de cada tramo.
+Metodología: ../../corpus/docs/corpus_flujo_trabajo.txt (canónica del ecosistema).
+=====================================================
+
+
+0. CÓMO SE USA — Y POR QUÉ ESTE ARCHIVO NACE TARDE
+----------------------------------------------------
+
+Este doc ORDENA lo que sigue. Nace el 2026-08-17, después que el resto de los
+docs del repo, y conviene decir por qué: hasta hoy el rumbo de este addon vivía
+repartido entre la tabla §4 de la arquitectura ("Dominios de contenido",
+inventariados y no escritos) y los roadmaps de los repos que lo consumen. Eso
+alcanzaba mientras el contenido no tenía pedidos propios. Dejó de alcanzar
+cuando apareció el primero (ver [1]).
+
+NOTA DE LECTURA (cita FLU-22): este doc es INTENCIÓN PURA, no autoridad. Los IDs
+que aparecen acá son CITAS a normas cuya sede está en otro lado — este roadmap no
+acuña ninguna. Un "limpio" del gate de coherencia sobre este archivo se reporta
+NO-AUDITABLE POR DISEÑO.
+
+Lo que NO se repite acá: el catálogo de dominios pendientes (anomalías,
+artefactos, PDA, detectores, defs de NPC, facciones). Está en la tabla §4 de
+STALKER_Arquitectura.md, con qué módulo toca cada uno. Este doc solo dice en qué
+orden y con qué criterio de entrada.
+
+
+1. INMEDIATO
+--------------
+
+  [1] LOS DOS TRADERS: COMIDA (nuevo) Y SIDOROVICH (re-catalogado) — pedido
+      del autor, 2026-08-17.
+      NO ESTÁ DISEÑADO NI ESCRITO. Lo que sigue es el pedido tal como se dijo,
+      no un diseño ratificado: falta la sesión de diseño y el voto (COA-28 leído
+      acá — que el pedido exista no abre el bloque).
+
+      DE DÓNDE SALE. De la pasada en juego de los nutrientes de Craving
+      (2026-08-17, 14/14). Los 15 consumibles de ese módulo hoy solo se
+      consiguen spawneándolos uno por uno desde la consola o el spawnmenu, y la
+      observación del autor fue exactamente esa: "para que no sea un desagrado
+      tener que spawnearlas cada una por la consola". El problema es de
+      DISPONIBILIDAD, no de comida.
+
+      EL PEDIDO, en sus términos:
+        - Un NPC "a lo Sidorovich" que tome TODOS los comestibles y los venda.
+        - Stock aleatorio de 1 a 6 por ítem.
+        - Reseteo de las comidas vendidas cada 20 minutos REALES.
+
+      POR QUÉ CAE EN ESTE REPO Y NO EN CRAVING. Craving posee el hambre y la sed
+      —cuánto drena, qué restaura cada comida— y nada más; un trader es
+      contenido, y el contenido de la Zona vive acá (STK-1). Craving publica sus
+      15 defs contra Cargo y este addon las consume: la dirección es la correcta
+      y no hay que abrir nada del otro lado.
+
+      LO QUE YA EXISTE Y HABRÍA QUE REUSAR, no reescribir:
+        - `lua/entities/corpus_stalker_sidorovich.lua` — NextBot matable, con
+          stock que se borra al morir, mirada, flexes y voz por carpetas de
+          acción. Está declarado SUBCLASEABLE (campos `ENT.Trader*`/`ENT.Voice*`)
+          justamente para esto: un trader nuevo debería ser una subclase, no una
+          copia.
+        - De Cargo: `Trade.AttachTrader` / `Trade.OpenFor` (el contrato para
+          traders con comportamiento) y `Trade.SetDefaultPersona`.
+      Si al escribirlo aparece que la subclase no alcanza, eso es un hallazgo
+      sobre el diseño de la entidad y va anotado — no se resuelve copiando el
+      archivo.
+
+      LAS TRES PREGUNTAS, VOTADAS POR EL AUTOR el 2026-08-17. Se dejan escritas
+      con su respuesta porque cada una descartó una alternativa concreta:
+        a) **TODO lo que declare `category = "food"` en Cargo** — es una REGLA y
+           no una lista, así que una comida nueva de cualquier addon entra sola.
+           Razón del autor, y es de método: *«así me hace más fácil el debug y me
+           permite comer lo que quiera, mientras lo compre»*. Descartada la lista
+           fija de los 15, que habría que tocar cada vez.
+        b) **El reseteo VUELVE A SORTEAR.** No repone al valor sorteado la vez
+           anterior: cada 20 minutos reales el stock se sortea de nuevo, 1-6 por
+           ítem. Consecuencia buscada: el catálogo cambia de una visita a otra.
+        c) **Es un NPC NUEVO**, no Sidorovich con comida. **RESUELTO el
+           2026-08-17: es el LIBRARIAN**, modelo `hawaiian.mdl` de
+           `dev/other/stalker rp  content #1/models/npc/stalker/`, confirmado
+           por el autor contra una captura del juego. **Beard queda descartado:
+           no está en ese roster** — los doce modelos de esa carpeta son el
+           protagonista (Degtyarev) y otros NPC.
+           *Vuelta que costó y conviene no repetir:* el censo de texturas
+           reportó que ese modelo viste un traje neutral con máscara antigás y
+           NO una camisa hawaiana ni el camuflaje de Freedom, o sea que no
+           coincidía con la descripción. El que estaba desactualizado era el
+           recuerdo del autor, que venía de una versión MODEADA del NPC. **El
+           censo acertó al no adjudicar y pedir ojos**: un asset y una
+           descripción que no coinciden no dicen cuál de los dos está mal.
+
+      LO QUE ESTO ES, DICHO POR EL AUTOR: *«al final es un cambio de fachada del
+      Sidorovich este trader, pero vendiendo comida con otro modelo y voces, si al
+      final los traders hacen lo mismo: saludan, te dicen por qué estás parado,
+      hablan al hacer trading y se despiden si sales del área»*. O sea que el
+      trabajo NO es una entidad nueva: es una SUBCLASE
+      (`ENT.Base = "corpus_stalker_sidorovich"`) que pisa los campos `ENT.Trader*`
+      y `ENT.Voice*`, más el stock dinámico, que es lo único que el Sidorovich no
+      sabe hacer.
+
+      PLATA INICIAL: **25.000**, la mitad de Sidorovich (`ENT.TraderMoney = 50000`,
+      medido en su archivo). Billetera finita: se lo puede drenar.
+
+      LOS 15 COMESTIBLES NO TIENEN PRECIO, Y SIN PRECIO NO SE COMERCIAN. Medido en
+      Cargo: `Trade.IsTradeable(def)` exige `isnumber(def.value) and def.value > 0`,
+      y **ausencia de `value` significa "no está a la venta", no "gratis"** (CRG,
+      contrato 13 de su CLAUDE.md). Las 15 defs de Craving no declaran `value`:
+      hoy el trader las mostraría sin precio y el server se negaría a moverlas.
+      Voto del autor: **default 5 USD** para lo que no tenga precio propio, y a los
+      15 se les pone el precio de su contraparte real. Es data de Craving (CRV-12)
+      y se edita allá; la tabla propuesta con sus fuentes está en el handoff.
+      **Y con precios reales las 15 caen todas en la banda 2-6 USD**, contra
+      munición de 8-900: la comida queda económicamente trivial. El autor votó la
+      salida el mismo día — un **multiplicador de precio por categoría** como
+      convar de Cargo (`cargo_value_mult_food 10` y una por cada categoría) —,
+      que es feature de CARGO y se negocia en su repo: quedó como **entrada 61 de
+      `cargo_roadmap.txt`**, PEDIDO sin ratificar. **Este tramo no la implementa
+      ni la espera**; los precios entran igual y el multiplicador los escala
+      después. Y no se escribe desde acá: STK-1.
+
+      LA VOZ YA TIENE SU CASA, VACÍA: `sound/npc/librarian/` con las diez
+      subcarpetas del estándar de acción y su `about.txt`. El autor suelta los
+      `.ogg` ahí y la subclase declara `ENT.VoiceDir = "npc/librarian"`. Mientras
+      estén vacías el trader **calla, sin error** — así que se puede cerrar el
+      tramo entero antes de que exista un solo audio. Ojo: `sound/` está en el
+      `.gitignore` (STK-2), esas carpetas no viajan en un commit.
+
+      ENMIENDA DEL MISMO DÍA — SON DOS TRADERS, NO UNO, Y EL MECANISMO ES EL
+      MISMO. El autor extendió el pedido: lo del stock sorteado con re-sorteo
+      cada 20 minutos **también se le aplica a Sidorovich**, y de paso se le
+      cambia el catálogo:
+        · **Librarian** → categoría `food`.
+        · **Sidorovich** → **munición** (todas), **medicina** (por categoría) y
+          **un par de armas ARC9 EFT**. Y se le **saca todo el stock DEV** que
+          tiene hoy de placeholder: eso queda para el **trader DEMO de Cargo**,
+          que es de quien salió y donde no molesta.
+      ⇒ Consecuencia de diseño, y es la que importa: **el re-sorteo no es del
+        trader de comida, es de la clase base.** Escribirlo en la subclase del
+        Librarian y después copiarlo a Sidorovich sería escribir dos veces lo
+        mismo — va en `corpus_stalker_sidorovich.lua` (la base) parametrizado
+        por categorías y cantidades, y cada trader declara lo suyo. Es el mismo
+        argumento por el que la voz es por carpetas y no por tabla.
+
+      LO QUE EL AUTOR YA SABE QUE PAGA, dicho por él: con re-sorteo, **Sidorovich
+      pierde a los 20 minutos lo que le vendiste**. Eso deroga en la práctica el
+      trabajo de persistencia de stock que se hizo en su momento — *«igual queda
+      como funcionalidad supongo para algún trader que sí pueda ser 100 %
+      persistente y sin restock»*. **No se borra ese código**: queda como la
+      rama sin re-sorteo, y un trader elige una de las dos. Que las dos convivan
+      es justamente lo que hay que cuidar al escribir (§5.4 del handoff: un
+      trader que persiste Y re-sortea tiene dos fuentes de verdad sobre su
+      stock).
+
+      LO QUE ESTA ENMIENDA ABRE Y NADIE VOTÓ TODAVÍA — está en el §5 del
+      handoff, resumido acá porque cambia el alcance:
+        · **1-6 por ítem no sirve para todas las categorías.** Anda para comida;
+          1-6 balas de 5.45 no es stock, es una anécdota. Hace falta un rango
+          por categoría, y nadie lo eligió.
+        · **«Un par de armas ARC9 EFT» NO es una categoría.** `weapons` trae
+          todo lo capturado. O es "N sorteadas de la categoría" o es una lista
+          de ids explícita — y son dos cosas distintas.
+        · **Las armas no son stackeables**: `AttachTrader` les crea una
+          instancia por unidad con su condición. Un sorteo sobre ellas no se
+          comporta como sobre un stack.
+
+      Y UNA PREGUNTA QUE NO ES DE ACÁ: el autor también se preguntó si no
+      convendría que un `value = 0` signifique "se regala" y que el trader filtre
+      **qué compra**. La mitad de vender la resuelve la entidad (esto); la mitad
+      de comprar es de Cargo y quedó como **entrada 62 de su roadmap**, PEDIDO
+      sin diseñar. **Este tramo no la necesita.**
+
+      CRITERIO DE ENTRADA: el trader de Cargo tiene que estar montado y su
+      contrato `Trade.AttachTrader`/`OpenFor` disponible (ya lo está: lo usa
+      Sidorovich). No depende de que Craving cierre nada más — sus 15 defs ya
+      están registradas y verificadas en juego. El modelo ya está elegido; **las
+      voces las aporta el autor** y su ausencia no bloquea nada.
+
+      HANDOFF ESCRITO: `dev/PROMPT_stalker_trader_comida.txt` (2026-08-17), con
+      el terreno ya medido — la API de trade de Cargo, la trampa del re-stock, la
+      tabla de precios propuesta y lo que queda por votar.
+
+      DEUDA MENOR QUE VIAJA CON ESTO, del mismo día y del mismo lugar: dos defs
+      de Craving declaran el sonido de consumo equivocado (`cola_bottle` y
+      `cola_glass` suenan a lata siendo botellas). Es data de Craving y se
+      arregla allá, no acá — pero si este trader las pone en circulación, se van
+      a oír mucho más. Anotado en `corpus-craving/docs/craving_estado.md`.
+
+
+2. DESPUÉS — LOS DOMINIOS INVENTARIADOS
+-----------------------------------------
+
+No tienen orden votado todavía. El catálogo, con qué módulo toca cada uno y qué
+pasa si ese módulo no está, es la tabla §4 de STALKER_Arquitectura.md: anomalías,
+artefactos, PDA, detectores, defs de NPC, facciones. Cada uno abre su propio
+bloque de diseño (patrón de corpus_flujo_trabajo.txt §2) y varios están
+bloqueados por Blocks ajenos que siguen abiertos — Cortex no arrancó, y la
+armadura de jugador de Caliber es su Block 3.
+
+Regla que aplica a todos, y por la que este addon no puede correr más rápido que
+sus vecinos: acá no se expone superficie (STK-1). Si un dominio parece necesitar
+que un módulo aprenda algo de la Zona, lo que falta es un punto de extensión en
+ese módulo, y eso se negocia en SU repo.

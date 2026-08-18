@@ -47,14 +47,18 @@ Zona (anomalías, artefactos…) siguen **inventariadas y analizadas, pero no es
 0. **Arquitectura del addon** → [`docs/STALKER_Arquitectura.md`](docs/STALKER_Arquitectura.md).
    Alcance, frontera, mapa de consumo por módulo y régimen de assets. **Léelo antes de escribir
    contenido nuevo** — dice contra qué se apoya cada dominio y qué pasa si el módulo no está.
-1. **Assets** → [`docs/ASSETS.md`](docs/ASSETS.md). Qué hay, de qué pack sale cada ruta, cómo
+1. **Rumbo** → [`docs/stalker_roadmap.txt`](docs/stalker_roadmap.txt). Qué sigue y en qué orden.
+   Nace el 2026-08-17 con el primer pedido de contenido propio (un trader de comestibles); hasta
+   ahí el rumbo vivía repartido entre §4 de la arquitectura y los roadmaps de los repos vecinos.
+   **No duplica el catálogo de dominios** — ése sigue en la tabla §4.
+2. **Assets** → [`docs/ASSETS.md`](docs/ASSETS.md). Qué hay, de qué pack sale cada ruta, cómo
    reconstruir el árbol. **Los assets NO están en el repo** (ver abajo).
-2. **Inventario de los packs de origen** (no publicado, en `dev/`) → `dev/stalker_rp_packs_mapa.md`
+3. **Inventario de los packs de origen** (no publicado, en `dev/`) → `dev/stalker_rp_packs_mapa.md`
    (6 packs, 3,2 GB: qué montar, qué NO, y la autopsia del código de referencia) y
    `dev/zona_stalkerrp_contenido.md` (packs ZONA de 2014). **Leerlos antes de copiar un solo asset.**
-3. **Metodología** → `../corpus/docs/corpus_flujo_trabajo.txt` (doc canónico de todo el ecosistema).
-4. **El framework** → `../corpus/docs/CORPUS_Architecture.md` (§3 API, §6 detección en runtime).
-5. **Convenciones de commit** → [`docs/stalker_convenciones_commits.txt`](docs/stalker_convenciones_commits.txt).
+4. **Metodología** → `../corpus/docs/corpus_flujo_trabajo.txt` (doc canónico de todo el ecosistema).
+5. **El framework** → `../corpus/docs/CORPUS_Architecture.md` (§3 API, §6 detección en runtime).
+6. **Convenciones de commit** → [`docs/stalker_convenciones_commits.txt`](docs/stalker_convenciones_commits.txt).
    Alcances específicos de **este** repo (STK-9).
 
 ## Assets: no se versionan
