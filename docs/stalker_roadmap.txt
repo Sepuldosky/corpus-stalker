@@ -373,10 +373,13 @@ orden y con qué criterio de entrada.
       para no ser económicamente trivial. Sus sub-votos se resuelven en la ronda
       que la escriba. La #62 sigue PEDIDA: este tramo no la usa.
 
-      CRITERIO DE ENTRADA, actualizado: son DOS entradas de Cargo esperando
-      pasada en juego (sus CHANGELOG 67 y 68). Se puede escribir igual —las dos
-      APIs están en el árbol y el harness las cubre—, pero la planilla tiene que
-      DECLARARLO, no marcarlo verde. **Del diseño ya no falta votar nada.**
+      CRITERIO DE ENTRADA: **CUMPLIDO el 2026-08-18**. Las dos entradas de Cargo
+      que este tramo necesitaba pasaron su pasada en juego el mismo día —
+      CHANGELOG **67** y **68**, las dos `[APLICADO]`: `cargo_selftest` 91 OK y
+      `cargo_selftest_cl` 93 OK, 0 fallas en los dos realms. **Del diseño
+      tampoco falta votar nada.** ⇒ El tramo entra sin bloqueantes y sin
+      decisiones abiertas; lo único que sigue afuera es la #65 de Cargo, que
+      pule la expulsión y no lo detiene.
 
             DEUDA MENOR QUE VIAJA CON ESTO, del mismo día y del mismo lugar: dos defs
       de Craving declaran el sonido de consumo equivocado (`cola_bottle` y
