@@ -449,3 +449,48 @@ assets (no versionado, STK-2) esperándolos.
 Verificación offline: sintaxis Lua válida (`luaparser`). El PARCHE 1 toca runtime y nace
 `[PENDIENTE]`: falta la pasada en juego — qué mirar es que la venda y el medkit de Coagulant
 dropeen con **su** modelo y no con el de la Zona, y que las dos mochilas sigan con el suyo.
+
+---
+
+## PARCHES DE sesión Sidorovich no moría: el `hook.Run` de `OnKilled` sin protección — 2026-08-17
+
+Reportado por el autor: al dispararle a Sidorovich y matarlo, **no muere** — se queda de pie, en
+su sitio, con 0 de vida y mudo al USE. La **causa** era de corpus-caliber (su listener de
+`OnNPCKilled` llamaba `GetActiveWeapon()` sobre este nextbot, método que el metatable `NextBot`
+no tiene; parche en el CHANGELOG de ese repo, misma fecha). Este parche es la otra mitad: la que
+hace que un tercero que explote **no pueda volver a hacer esto**.
+
+`ENT:OnKilled` dispara `hook.Run("OnNPCKilled", …)` y **tiene que dispararlo antes del
+`BecomeRagdoll`** — los listeners necesitan la entidad todavía viva, y el ragdoll la remueve. Pero
+`hook.Run` no atrapa errores: la excepción de un listener sube por la pila y **aborta todo lo que
+venía después en `OnKilled`**, incluido ese mismo `BecomeRagdoll`, la línea de muerte y el timer
+de respawn. Sin `BecomeRagdoll` la entidad nunca se remueve: queda parada con la vida en 0.
+
+**Y es permanente, no un fallo del primer golpe.** `self.SidorMuerto = true` se setea *arriba* del
+`hook.Run`. Cada disparo posterior vuelve a llamar a `OnKilled` y sale por el `return` de ese flag:
+el trader **no puede morir nunca más**, y `SidorUsar` corta por el mismo campo, de ahí el mudo al
+USE. El log del autor lo mostraba entero — 20 impactos de Caliber después del error, sin un solo
+`OnKilled` nuevo. Esa asimetría (el daño se sigue registrando, la muerte no se vuelve a intentar)
+es la firma del defecto, y es lo que separa "murió mal" de "quedó atrapado".
+
+- PARCHE 1 — fix(npc): `lua/entities/corpus_stalker_sidorovich.lua` — el `hook.Run("OnNPCKilled",
+  …)` queda **donde estaba** (no puede moverse, ver arriba) pero envuelto en `ProtectedCall`, que
+  reporta el error en consola con stack —vía `ErrorNoHaltWithStack`— sin frenar la ejecución. Un
+  `pcall` pelado se lo habría comido en silencio, que para un bug de terceros es peor que el bug.
+  El atacante y el inflictor se leen a locales antes del closure. **[PENDIENTE]**
+
+**Por qué van los dos parches y no solo el de Caliber.** Arreglar únicamente al listener culpable
+deja la trampa armada para el próximo addon que escuche `OnNPCKilled` — y son varios los que lo
+hacen. La regla que queda: **un `hook.Run` en medio de una secuencia irreversible es una dependencia
+de terceros**, y se protege como tal. Vale para cualquier trader que subclasee esta entidad, que
+hereda este `OnKilled` tal cual.
+
+Verificación (PASO 4, del autor): matarlo con el scavenger de Caliber **encendido**. Criterio:
+ragdoll + línea de muerte + respawn según `corpus_stalker_trader_respawn`. Y el caso que de verdad
+prueba el parche: **si Caliber vuelve a tirar el error en consola pero el trader igual muere y
+ragdollea**, esta capa está haciendo su trabajo y el defecto que quedó vivo es el del otro repo —
+los dos parches se verifican por separado, no se cubren entre sí.
+
+**Ojo al probar:** un Sidorovich que ya quedó trabado en la sesión **sigue trabado** — tiene
+`SidorMuerto = true` en memoria y un autorefresh de Lua no lo limpia. Hay que removerlo a mano o
+recargar el mapa antes de la pasada.
