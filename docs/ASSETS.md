@@ -34,7 +34,7 @@ ruta. Cuando son byte-idénticos no hay conflicto real; cuando **no** lo son, ga
 | `models/player/seva/` (21), `models/player/bandit/` (7) | 28 | playermodels | `zona stalkerrp content` (WS `300746843`) |
 | `models/arms/` | 1 | `c_arms_stalker` (brazos first-person) | ídem |
 | `models/rashkinsk/` | 1 | `sidor` — **Sidorovich**, el trader. Rig **ValveBiped con los includes de animación del ciudadano HL2** (`male_shared`/`gestures`/`postures`): un `anim` entity le corre las secuencias de siempre. Material único: `act_stalker_trader_1` | `stalker rp  content #2` |
-| `models/npc/stalker/` | 1 | `hawaiian` — **el Hawaiano**, el trader de comestibles (`lua/entities/corpus_stalker_hawaiian.lua`, roadmap [1]). Rig ValveBiped de 56 huesos con los includes del ciudadano HL2 (`m_anm`, `humans/male_shared` — de ahí salen `head_yaw`/`head_pitch` y los idles de pie), más `Police_Animations`/`Police_ss`/`combine_soldier_anims`. **`numflexdesc = 0`: NO tiene flexes**, así que este trader no parpadea ni mueve la boca — es del modelo, no un defecto, y la base degrada en silencio. Dos materiales, y viven bajo `materials/models/player/stalker/` (el `cdmaterials` del `.mdl` dice `models\\player\\stalker\\`, **no** `npc/`): `act_faces_1_06` (cara) y `act_stalker_neutral_2` (+ su `_n`, traje neutral con máscara antigás). Todo leído del header del `.mdl` y de los `.vmt`, no del nombre | `stalker rp  content #1` |
+| `models/npc/stalker/` | 1 | `hawaiian` — **el Hawaiano**, el trader de comestibles (`lua/entities/corpus_stalker_hawaiian.lua`, roadmap [1]). Rig ValveBiped de 56 huesos con los includes del ciudadano HL2 (`m_anm`, `humans/male_shared` — de ahí salen `head_yaw`/`head_pitch` y los idles de pie), más `Police_Animations`/`Police_ss`/`combine_soldier_anims`. **`numflexdesc = 0`: NO tiene flexes**, así que este trader no parpadea ni mueve la boca — es del modelo, no un defecto, y la base degrada en silencio. Dos materiales, y viven bajo `materials/models/player/stalker/` (el `cdmaterials` del `.mdl` dice `models\\player\\stalker\\`, **no** `npc/`): `act_faces_1_06` (cara) y `act_stalker_neutral_2` (+ su `_n`, traje neutral con máscara antigás; ojo: **el `_n` es huérfano** — ningún `.vmt` lo cita). Todo leído del header del `.mdl` y de los `.vmt`, no del nombre. **TEXTURAS CAMBIADAS EL 2026-08-18** (ronda 2): las dos vivas salen ahora del pack de Workshop `902242849`, medidas del header del `.vtf` — cara `act_faces_1_06` **1024×512** (era 256×128 DXT5) y cuerpo `act_stalker_neutral_2` **1024×1024 DXT1** (era 256×256). **El `.mdl` y el `.vvd` de ese pack son IDÉNTICOS BYTE A BYTE a los de `stalker rp  content #1`** (mismo md5; 28.212 y 218.112 bytes), así que el modelo NO cambió: misma malla, mismo rig, mismas animaciones y **`numflexdesc` sigue en 0**. Lo que subió de calidad son los píxeles, y nada más | `.mdl`: `stalker rp  content #1` · `.vtf` vivas: `s.t.a.l.k.e.r. hawaiian (pm & npc)` (WS `902242849`) |
 | `models/spec45as/stalker/items/` | 3 | `medkit_low/med/high` — los botiquines normal/army/scientific de STALKER. **Los tres esperan defs de ítem PROPIAS de la Zona.** El `low` re-vistió al Medkit de Coagulant hasta el 2026-08-06; se retiró — ver §1.4 | `stalker rp  content #4` |
 | `models/wick/wrbstalker/cop/newmodels/items/` | 1 | `wick_bandage` — la venda (modelos COP de wick). **Espera un def propio.** Re-vistió a la Bandage de Coagulant hasta el 2026-08-06 — ver §1.4 | `stalker rp  content #1` |
 
@@ -143,10 +143,15 @@ cp "$DEV/stalker rp  content #1/models/wick/wrbstalker/cop/newmodels/items/wick_
 # El Hawaiano (trader de comestibles). El .mdl vive en models/npc/stalker/ pero
 # su cdmaterials apunta a models/player/stalker/ — la ruta del archivo y la del
 # material NO coinciden, y las dos son verbatim (STK-3).
+# DOS PACKS, y el orden importa: el .mdl sale del #1 y las dos texturas VIVAS
+# del pack de Workshop 902242849, que las trae a 1024 en vez de 256. El .mdl de
+# los dos packs es el MISMO archivo byte a byte (md5 verificado), así que da
+# igual de cuál se copie; lo que no da igual son los .vtf.
 mkdir -p "$ADDON/models/npc/stalker" "$ADDON/materials/models/player/stalker"
 cp "$DEV/stalker rp  content #1/models/npc/stalker/hawaiian."* "$ADDON/models/npc/stalker/"
-for t in act_faces_1_06 act_stalker_neutral_2 act_stalker_neutral_2_n; do
-  cp "$DEV/stalker rp  content #1/materials/models/player/stalker/$t."* "$ADDON/materials/models/player/stalker/"
+cp "$DEV/stalker rp  content #1/materials/models/player/stalker/act_stalker_neutral_2_n.vtf" "$ADDON/materials/models/player/stalker/"
+for t in act_faces_1_06 act_stalker_neutral_2; do
+  cp "$DEV/s.t.a.l.k.e.r. hawaiian (pm & npc)/materials/models/player/stalker/$t."* "$ADDON/materials/models/player/stalker/"
 done
 cp "$DEV/stalker rp  content #1/materials/wick/wrbstalker/cop/newmodels/items/item_m_bandage."* "$ADDON/materials/wick/wrbstalker/cop/newmodels/items/"
 
