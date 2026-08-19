@@ -46,7 +46,14 @@ campo de tabla** — `scripted_ents.TableInherit` mergea las tablas del padre en
 subclase las pise, así que un campo habría hecho que el trader de comida vendiera también la
 medicina de Sidorovich, sin error. Y `lua/entities/corpus_stalker_hawaiian.lua` — **el Hawaiano**,
 trader de comestibles y primera SUBCLASE (roadmap [1]): vende todo lo que declare
-`category = "food"`, sin una sola función propia. Todo eso **[PENDIENTE]** de su pasada. Además, los assets que consumen Cargo y Craving (modelos de
+`category = "food"`, sin una sola función propia. **Todo eso CONFIRMADO EN JUEGO el 2026-08-18**
+(rondas 1, 2 y 2b: 20/24, 5/11 y 10/11 — la del medio mide sobre todo instrumentos rotos). El +USE
+bloqueado durante la ventana **avisa en pantalla** con un gap propio por jugador, y el aviso viaja
+por **una sola casa** con dos llamadores. Queda afuera una sola cosa y es de Cargo: el panel del
+expulsado sigue DIBUJADO hasta que se lo cierra a mano (`trade_close` es cliente→server únicamente),
+y eso lo salda su entrada **#65** — pedida explícitamente por el autor el 2026-08-18. **Y una
+advertencia de método que este tramo pagó caro:** la «falla» del +USE durante la ventana persiguió
+tres rondas un defecto **que no existía** — la E caía fuera de la ventana y abrir era correcto. Además, los assets que consumen Cargo y Craving (modelos de
 ítem, voces de Sidorovich, música de radio sin consumidor todavía). Las demás entidades de la
 Zona (anomalías, artefactos…) siguen **inventariadas y analizadas, pero no escritas**.
 

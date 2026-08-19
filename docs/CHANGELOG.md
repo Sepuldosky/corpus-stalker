@@ -573,7 +573,7 @@ COR-5, COR-12 y el contrato de trade que ya existían.
   · **La trampa que el `OnKilled` de al lado ya conocía:** antes de vaciar el stock hay que borrar
     las INSTANCIAS de las entradas con `uid`. Sin eso, cada re-sorteo filtra blobs en `data/` para
     siempre — y con un re-sorteo cada veinte minutos eso crece solo. Es el mismo cuidado, aplicado a
-    la otra puerta por la que ahora se borra stock. **[APLICADO 2026-08-18 — PARCIAL]** La ventana, el ciclo, el drenado, la convar en 0 y el respawn pasaron (filas 15/17/19/20/21). **El +USE durante la ventana FALLÓ (16)** y el borrado de instancias quedó **sin medir** porque su control no discriminaba (18) — ver el bloque de la pasada, al final.
+    la otra puerta por la que ahora se borra stock. **[APLICADO 2026-08-18]** La ventana, el ciclo, el drenado, la convar en 0 y el respawn pasaron (filas 15/17/19/20/21). Las dos que faltaban cerraron en la **ronda 2b**: el +USE durante la ventana **no era un defecto** —el detour sobre `OpenFor` midió que cada apertura ocurría con la ventana en `false`, o sea fuera de ella— y el borrado de instancias se midió por identidad, `de 9 anotados siguen vivos 0`.
 
 - PARCHE 4 — feat(npc): **`lua/entities/corpus_stalker_hawaiian.lua`** (S1) — el Hawaiano, trader
   de comestibles y **primera subclase** del trader (STK-5). Vende todo lo que declare
@@ -739,7 +739,9 @@ Quedan tres causas, y **ninguna se elige sin medir**:
      en los otros 40, abrir es lo correcto.
 La fila no discrimina entre las tres porque **no imprime contra qué está midiendo** — ni qué
 entidad ni cuántos segundos faltan. Eso se arregla en la ronda 2 con un comando que lo diga.
-**[PENDIENTE — ronda 2]**
+**[PENDIENTE — ronda 2]** ⇒ **CERRADO en la ronda 2b, y NO era un defecto:** el detour sobre
+`Trade.OpenFor` midió que cada apertura ocurría con la ventana en `false`, o sea con la E cayendo
+FUERA de ella; durante los tramos en `true` no hay una sola línea `ABRE`.
 
 **2. SIN CORRER (fila 18) — el control de blobs no discriminaba, y el autor lo cazó.** Su nota:
 *«ambos dicen blobs vivos 55, el instrumento puede estar malo, porque le vendí algo y no cambió
@@ -752,7 +754,7 @@ nada»*. Tiene razón, y por dos motivos independientes:
     quieto probaba que el instrumento no reaccionaba a nada.
   ⇒ El control que sí discrimina es **por identidad y no por cuenta**: anotar los `uid` que están
     en la repisa ANTES del re-sorteo y verificar que después NINGUNO siga en `_live`. Va a la
-    ronda 2. **[PENDIENTE — ronda 2]**
+    ronda 2. **[PENDIENTE — ronda 2]** ⇒ **CERRADO en la ronda 2b:** `de 9 anotados siguen vivos 0`.
 
 **3. SIN CORRER (fila 14) — sin el pack EFT montado.** Decisión del autor: *«no lo voy a probar por
 mientras»*. Exige desmontar el pack y reiniciar, y es la rama que degrada. Queda pendiente y **no
@@ -771,4 +773,314 @@ unidad mientras la pantalla estaba abierta.
 repisa mide la repisa AHORA, no la siembra*, y el comercio la cambia. La cuenta de la siembra ya se
 imprime —el log dice «N sembradas»— y la fila estaba leyendo la otra. En la ronda 2 el criterio
 sale del LOG y no del `#ST`, y el `#ST` queda como dato secundario. Sin eso, la fila puede seguir
-saliendo verde con cualquier número. **[PENDIENTE — ronda 2]**
+saliendo verde con cualquier número. **[PENDIENTE — ronda 2]** ⇒ **CERRADO en la ronda 2b**, con la
+línea del log del Hawaiano que no había visto nadie en tres rondas: `16 defs registradas, 15
+sembradas, 1 excluidas por prefijo, 0 sin value`.
+
+
+---
+
+## PARCHES DE sesión Ronda 2 de los dos traders: el aviso del +USE, dos instrumentos y la textura — 2026-08-18
+
+Ronda 2 de la entrada **[1]** del roadmap, guiada por `dev/PROMPT_stalker_traders_r2.txt`. **No
+re-hace la ronda 1**: el mecanismo está escrito y medido. Acá entran tres cosas de distinta
+naturaleza — un voto del autor que son ~6 líneas, **dos filas de planilla que no discriminaban**, y
+un cambio de assets que resultó ser lo contrario de lo que parecía. **Cargo no se tocó** (STK-1) y
+**no se acuñó ninguna norma nueva**.
+
+- PARCHE 1 — feat(npc): **el +USE bloqueado durante la ventana de cierre ahora AVISA EN PANTALLA**,
+  no sólo habla. Votado por el autor esta ronda (§2.4 del prompt). El estado anterior era honesto
+  pero mudo: `Inventory.Notice` se mandaba **una sola vez, al ENTRAR la ventana, y sólo a los que
+  estaban mirando en ese instante**; quien llegaba después —o quien volvía a apretar la E— no leía
+  ninguna explicación y sólo veía que no pasaba nada. Con un trader cuya carpeta de voz está vacía,
+  **no había ninguna señal en absoluto**.
+  · **El gap es PROPIO** (`PAUSA_AVISO = 6 s`) y no el de la voz (2,5 s), porque el texto y el audio
+    se machacan distinto: uno tapa la pantalla y el otro no.
+  · **Va por jugador, con clave `SteamID64`** (`ClaveDe`), como los otros cuatro registros por
+    jugador de esta entidad — el duplicator mergea `ent:GetTable()` entero y una clave que fuera el
+    Player se llevaría el objeto puesto. Es el quinto, y el comentario de `ClaveDe` los cuenta.
+  · **El plazo se valida POR VALOR al leerlo**: uno heredado de un savegame quedaría en el futuro
+    para siempre y **callaría el aviso sin que nada falle**, que es exactamente el modo en que este
+    archivo ya se rompió una vez (el bloque de `PlazoImposible` existe por eso). El campo se reinicia
+    además en `SidorIniciarSesion`, junto a los otros cuatro.
+  **[APLICADO 2026-08-18]** — cerrado en la ronda 2b: el aviso llega por las dos puertas y en los
+  dos traders, y el gap por jugador se midió con su registro visible (`76561197996735864  0.7`,
+  `jugadores con aviso reciente 1`).
+
+- PARCHE 2 — refactor(npc): **el texto del aviso tiene UNA SOLA CASA** (`AvisarRestock`), y ahora
+  tiene dos llamadores: la ventana al entrar y el +USE bloqueado. La alternativa era copiar el
+  string, y **que las dos puertas digan lo mismo no puede depender de que alguien lo copie bien**:
+  un texto que se lee distinto según por dónde llegó es un defecto que el código no muestra —
+  ningún grep lo encuentra, porque las dos líneas son válidas. La fila 09 mide la puerta vieja
+  contra la nueva y exige que el texto coincida **palabra por palabra**. **[APLICADO 2026-08-18]**
+  — y la prueba más limpia de que hay una sola casa es que el Hawaiano dice lo suyo con SU nombre:
+  `[Cargo] Hawaiian is restocking. Come back in a moment.`
+
+- PARCHE 3 — docs(assets): **la textura del Hawaiano sube de 256 a 1024, y el modelo NO cambia.** El
+  autor trajo el pack de Workshop `902242849` («S.T.A.L.K.E.R.: Hawaiian (PM & NPC)») esperando un
+  modelo mejor. Desempacado y medido, **el reemplazo resultó ser cero líneas de código**:
+  · **El `hawaiian.mdl` y el `hawaiian.vvd` del pack son IDÉNTICOS BYTE A BYTE** a los que el repo ya
+    tenía (mismo md5; 28.212 y 218.112 bytes). Misma malla, mismo rig, mismas animaciones — y
+    **`numflexdesc` sigue en 0**, así que la fila de parpadeo/boca **tampoco se puede correr en esta
+    ronda** y no entra en la planilla. El autor lo había previsto (*«probablemente este tampoco
+    tenga face flexes»*) y ahora está **medido**, no previsto.
+  · **Lo que sí cambió son los píxeles**, leído del header de los `.vtf`: cara `act_faces_1_06`
+    **256×128 DXT5 → 1024×512** y cuerpo `act_stalker_neutral_2` **256×256 → 1024×1024 DXT1**. Las
+    dos texturas HD se copiaron al árbol local del addon, que ahora es el único proveedor: el autor
+    se desuscribe del addon, y el árbol extraído queda archivado en
+    `dev/other/s.t.a.l.k.e.r. hawaiian (pm & npc)/` para que la receta de reconstrucción de
+    `docs/ASSETS.md` siga resolviendo sin la suscripción.
+  · **Y había una colisión de rutas que había que resolver antes de medir nada en juego:** las dos
+    versiones viven en la MISMA ruta exacta (`materials/models/player/stalker/`), corpus-stalker
+    está montado por junction y el addon del Workshop también. Con dos proveedores del mismo
+    archivo, **quién gana no lo elige el código** — y si hubiera ganado la de 256, la pasada habría
+    reportado «no cambió nada» y el defecto habría sido del setup. Con el reemplazo local y la baja
+    de la suscripción queda **un solo proveedor**, o sea que el resultado es por construcción.
+  · `docs/ASSETS.md` gana lo medido (las resoluciones, la advertencia de que el `.mdl` es el mismo,
+    y que `act_stalker_neutral_2_n.vtf` es **huérfano**: ningún `.vmt` lo cita) y la receta de
+    reconstrucción pasa a citar **dos packs**, con el motivo. **[APLICADO 2026-08-18]** — la fila 03
+  imprimió `vtf 2796348`: la de 1024×512 es la que el juego sirve.
+
+### Los dos instrumentos reparados (no cambia una línea de código)
+
+Los dos son defectos de INSTRUMENTO. Lo que cambia es la planilla, y por eso van acá y no como
+parche.
+
+**1. El de blobs (fila 18 de la r1) contaba un TOTAL GLOBAL.** Leía `Instances._live` entero —que
+incluye los blobs del jugador, de otros contenedores y de todo lo demás— y pedía que «se mantuviera
+en el mismo orden»: **un control cuyo valor sano y cuyo valor roto se parecen no mide nada**. El
+autor lo cazó con el A/B correcto (*«le vendí algo y no cambió nada»*), y tiene razón por un motivo
+que el control no sabía: **vender a un trader MUEVE un blob, no lo crea ni lo borra**, así que el
+número tenía que quedarse quieto. Que se quedara quieto probaba que el instrumento no reaccionaba a
+nada. ⇒ El reemplazo mide **identidad y no cuenta**: se anotan los `uid` de la repisa ANTES del
+re-sorteo y después se exige que **ninguno** siga en `_live`. Y trae su propia precondición
+medible: **si el primer comando imprime 0, la fila es SIN CORRER y no PASA** — sin uid que seguir,
+el segundo imprimiría 0 sin haber medido nada, que es el falso verde de la misma familia.
+
+**2. El de la repisa del Hawaiano (fila 06) contó `#ST`, salió 14 con criterio 15 — y se marcó
+PASA.** La aritmética no deja lugar: 16 defs de `food` menos `cargo_dev_food` por prefijo son 15
+líneas y las 15 son stackeables. ⇒ **Contar la repisa mide la repisa AHORA, no la siembra**, y el
+comercio la cambia. El criterio pasa a salir del LOG —que ya imprime «N sembradas»— y el `#ST`
+queda como dato secundario **con la advertencia escrita de que puede ser menor si ya se compró**.
+⚠ Y la fila nueva pide la línea del log **explícitamente**, con consola limpia: en el reporte de la
+ronda 1 se pegaron sólo las de Sidorovich, así que **la del Hawaiano no la vio nadie todavía**.
+
+### Y lo que esta ronda le contestó a Cargo
+
+**La entrada #65 de Cargo (`Trade.CloseFor(ply, trader)`) sube de prioridad.** Su sub-voto —*«¿
+`ClearViewers` cambia de comportamiento o `CloseFor` es aparte?»*— se había dejado para después de
+este tramo con el argumento de que **quien lo contesta bien es la pasada en juego de este trader**.
+La contestó: el panel muerto molesta, y molesta **con la forma de una ventana que parece
+reabrirse**. Es además la única cosa que borra de raíz la causa (a) del rojo de la ronda 1. **Se
+escribe del otro lado** (STK-1); acá sólo queda anotado.
+
+### Verificación
+
+Sintaxis GLua de los dos entities: verde con `python dev/glua_check.py`, **y el instrumento se
+controló sobre una línea NUEVA de este parche** (mutarla lo pone en rojo, exit 1). `corpus-craving`
+no se tocó, así que su harness no aplica a esta ronda.
+
+**Esta ronda no corrió ninguna sonda de escritorio, y es a propósito:** lo que se escribió —un
+`Notice` y un gap por jugador— no se puede medir sin el juego, y una sonda que lo simulara con
+stubs mediría sus propios stubs. Lo único medido de escritorio son los **assets**, y ahí sí: md5 de
+los `.mdl`/`.vvd`, headers de los cuatro `.vtf`, y las cinco rutas de la receta de reconstrucción
+verificadas contra el disco.
+
+Planilla: **`dev/checks/stalker-trader-comida-r2.html`**, 11 filas, auditada
+(`dev/auditar_planilla.py` → PLANILLA SANA, 11 checks, STORE propio, sin arrastre) y con **el largo
+de los nueve comandos de consola medido sobre el archivo generado** — peor caso 233 de los 255 que
+la consola trunca sin avisar.
+
+
+---
+
+## LA PASADA DE LA RONDA 2 — 5 / 11, y la ronda midió sobre todo MIS INSTRUMENTOS — 2026-08-18
+
+Planilla `dev/checks/stalker-trader-comida-r2.html`, corrida por el autor: **5 PASA · 0 FALLA ·
+6 SIN CORRER**. El titular no es el score: **cuatro de los seis SIN CORRER cayeron por un defecto
+de la planilla, no del código**, y el quinto salió verde midiendo una tabla vacía. Esta ronda dice
+más sobre cómo escribo instrumentos que sobre el addon.
+
+### Lo que cerró
+
+- **La textura HD** (fila 03): `vtf 2796348` — la de 1024×512 es la que el juego sirve. El cambio
+  de assets quedó cerrado, y con él la confirmación de que el `.mdl` no cambió.
+- **Cada trader tiene su propio reloj** (02): `883 Hawaiian 351` y `1083 Sidorovich -1` — el
+  Hawaiano contando y Sidorovich todavía sin sembrar, que es el estado correcto de un trader al
+  que no se le abrió la pantalla.
+- **La repisa del Hawaiano** (04): `entradas AHORA 15`. **El 14 de la ronda 1 no volvió**, y 15 es
+  exactamente lo que manda la aritmética. Con la salvedad de abajo.
+- **El +USE fuera de la ventana abre** (05), que es el control de todo lo demás: lo que se tocó
+  esta ronda vive dentro de `SidorUsar` y no lo rompió.
+- **Y el aviso nuevo LLEGA** — pero la medición apareció en la nota de otra fila. En el volcado de
+  consola de la fila 10 está la línea `[Cargo] Sidorovich is restocking. Come back in a moment.`,
+  y ese `[Cargo]` **es** el aviso en pantalla: `Inventory.Notice` sale por `chat.AddText` y la
+  consola lo copia. Preguntado al autor, confirmó que en ese momento **apretó E con la pantalla
+  cerrada** ⇒ el texto salió por la **puerta nueva**, que es el voto de esta ronda funcionando.
+  **[APLICADO 2026-08-18]** para el PARCHE 1. La puerta vieja sigue sin medirse.
+
+### El defecto que costó la ronda: un comando partido entre el botón y la prosa
+
+**La sonda —la fila 01, de la que dependían otras tres— nunca corrió.** Su comando definía la
+función `R()`; el `timer.Create` que la hace imprimir vivía en el `cmdNote` de al lado. **El botón
+copia el comando; la prosa no la copia nadie.** Y encima **definir una función no imprime nada**,
+así que el éxito y el fracaso se veían idénticos — la nota del autor fue literalmente *«No imprimió
+nada»*. Con la sonda muerta cayeron las filas 06 (el rojo), 07 (el aviso) y 09 (la puerta vieja),
+que la usaban para saber cuándo la ventana estaba activa.
+
+Es el nº 66 del catálogo de controles otra vez, con otra ropa: **lo que hay que EJECUTAR no
+sobrevive en la prosa**. Ya estaba escrito y lo volví a hacer.
+
+### Tres instrumentos más que no discriminaban
+
+1. **El censo de traders estaba CIEGO al candidato más probable.** Recorría
+   `ents.FindByClass("corpus_stalker_*")`, así que **no podía ver el trader DEMO de Cargo** — que
+   el setup de la ronda 1 deja vivo a propósito y que **abre una pantalla de trade idéntica**. O
+   sea: el instrumento escrito para discriminar «era el otro trader» no miraba al otro trader.
+2. **El control de blobs se podía correr dos veces, y la segunda DESTRUÍA la medición.** El primer
+   comando pisa `VIEJOS`; corrido de nuevo después del re-sorteo, la verificación habría comparado
+   la lista nueva contra sí misma e impreso «de 13 siguen vivos 13» — **un falso ROJO garantizado
+   sobre un mecanismo sano**. El autor lo corrió dos veces (9 y después 13), que es lo natural
+   cuando un comando es lo único que hay a mano. ⇒ Sus dos números, de paso, **son coherentes con
+   el diseño**: el `uid` sale de lo no stackeable, o sea 8 armas más 1 a 5 torniquetes, así que el
+   rango posible es 9 a 13 y salieron las dos puntas.
+3. **El del gap del aviso salió PASA con la tabla VACÍA.** Un `PrintTable` de una tabla vacía
+   imprime exactamente lo mismo que el de una tabla que no existe, y una tabla vacía significa que
+   el aviso **nunca corrió**: eso es SIN CORRER, no verde. La fila pedía «una clave» para pasar y
+   se marcó igual — pero el defecto es del comando, que era mudo. **Y es mi propia inconsistencia**:
+   en la fila de blobs escribí explícitamente que un cero es SIN CORRER, y en ésta no.
+
+### Y la fila 04 pasó con el dato secundario, otra vez
+
+El criterio era **el LOG** (`N sembradas`) y se marcó con el `#ST`. El número es correcto y la
+aritmética cierra, así que no hay defecto de código — pero **la línea del log del Hawaiano sigue
+sin verla nadie**, en dos pasadas seguidas. Vuelve a la ronda 2b como una fila de un solo renglón.
+
+### EL ROJO: confirmado que ABRE, y el censo de la ronda 1 tenía un agujero
+
+Preguntado explícitamente, el autor confirmó: **durante el restocking, insistiendo con la E, la
+pantalla de trade abre.** Así que la falla 16 de la ronda 1 está viva y no es una impresión.
+
+**Y acá está el error de método que hay que registrar, porque es mío y es de los que se repiten:**
+la ronda 1 censó *«`Trade.OpenFor` es la única puerta que manda `NET_TRADE_OPEN`»* y de ahí
+concluyó que la pantalla no podía venir de una apertura nueva. **Eso mide quién manda el paquete,
+no quién llama a la función que lo manda** — son dos preguntas distintas y la que importaba era la
+segunda. Censada ahora con `rg --no-ignore` sobre todo el árbol: `Trade.OpenFor` tiene **exactamente
+dos llamadores**, nuestra entidad (detrás del gate) y **el trader DEMO de Cargo**
+(`corpus_cargo_trader.lua:296`). El demo estaba vivo en el mapa, abre una pantalla idéntica, y
+**es justo lo que el censo de traders no miraba**.
+
+Lo que la fuente **sí** permite afirmar, y acota el arreglo: dentro de `SidorUsar` no hay camino a
+`OpenFor` con la ventana activa — el gate sale antes y `SidorRestockCerrado()` sólo puede dar
+`false` fuera de la ventana. Así que quedan dos mecanismos, y **ninguno se elige sin medir**: era
+otro trader, o la E cayó cuando la ventana ya había terminado (con `warn 30`, el re-sorteo llega a
+los 30 s de entrar y el trader vuelve a abrir **correctamente**, con stock nuevo).
+
+⇒ **No se escribió una sola línea de arreglo, a propósito.** Un parche sobre un mecanismo no medido
+es la forma de acreditarle a un cambio algo que no arregló. Lo que se escribió es el instrumento
+que lo decide en una tecla: un **detour de consola sobre `Trade.OpenFor`** que imprime la entidad y
+su estado en el instante exacto de abrir. No toca el repo y se retira solo. **[PENDIENTE — ronda 2b]**
+⇒ **CONTESTADO: no había defecto que arreglar.** Ver el bloque de la pasada de la ronda 2b.
+
+### Lo que se escribió esta vez: instrumentos, no código
+
+**El addon no cambió una sola línea en esta reparación.** Salieron:
+
+- **`dev/checks/stalker-trader-comida-r2b.html`** — 11 filas: la sonda arreglada (**un** comando
+  que define, arranca y dispara al toque), el censo que ve a todos los traders, el detour de
+  `OpenFor`, la adjudicación del rojo, una fila propia para dejar el estado (`TR`/`CG`), el gap del
+  aviso con un comando que **cuenta** en vez de un `PrintTable` mudo, el log del Hawaiano, las dos
+  de uid partidas y con guarda anti-pisada, la puerta vieja del aviso, y la del pack EFT por
+  tercera vez.
+- **`dev/parsear_cmds_planilla.py`** — auditor nuevo de los COMANDOS de una planilla, que
+  complementa a `auditar_planilla.py` (que mira la página, no lo que se ejecuta). Hace tres cosas:
+  **parsea** cada `lua_run` con `glua_check` —un comando de consola es código y nadie lo estaba
+  parseando—, **avisa de los comandos que viven en la prosa**, que es el defecto que costó esta
+  ronda, y marca los **mudos**, que no distinguen el éxito del vacío.
+  ⇒ **Y lo cazó en su primera corrida, sobre mi propia planilla nueva:** la fila de los uid dejaba
+    su `TR`/`CG` en el `cmdNote`. El mismo defecto, en la planilla escrita para repararlo. Por eso
+    ahora es una fila con botón.
+
+### Verificación
+
+`dev/auditar_planilla.py` → **PLANILLA SANA**, 11 checks, STORE propio, sin arrastre. Los **11
+comandos parsean** con el auditor nuevo, y **los dos instrumentos se controlaron con una mutación**
+(el auditor se pone rojo con una etiqueta sin cerrar y con un `STORE` compartido; el parser, con un
+paréntesis de menos). Largo de los comandos medido sobre el archivo generado: **peor caso 233** de
+los 255 que la consola trunca sin avisar. Sintaxis GLua de los dos entities: verde, sin cambios.
+
+
+---
+
+## LA PASADA DE LA RONDA 2b — 10 / 11, Y EL ROJO NO ERA UN DEFECTO — 2026-08-18
+
+Planilla `dev/checks/stalker-trader-comida-r2b.html`, corrida por el autor: **10 PASA · 0 FALLA ·
+1 SIN CORRER**. Con instrumentos que podían fallar, el tramo cerró en una sola pasada — y el
+resultado más importante es un **rojo que se cae**.
+
+### EL ROJO DE LA RONDA 1 NO ERA UN DEFECTO: la E caía FUERA de la ventana
+
+El detour sobre `Trade.OpenFor` lo dijo en una línea, y lo dijo cuatro veces:
+
+```
+NextBot [1065][corpus_stalker_sidorovich]   73.2   false
+ABRE    NextBot [1065][corpus_stalker_sidorovich]   false
+```
+
+**Cada vez que la pantalla abrió, la ventana de cierre estaba en `false`** — a 73, 72 y 71 segundos
+de un ciclo de 90 con ventana de 30, o sea con el re-sorteo lejísimos. La apertura era **correcta**.
+Y el negativo, que es la mitad que vale: durante los tramos en que la sonda imprime `true`, la
+consola muestra el aviso de restocking y **ni una sola línea `ABRE`**. El gate está en el camino del
++USE y funciona.
+
+⇒ **Entonces, ¿qué vio el autor en la ronda 1?** Las dos mitades encajan: con los defaults de
+entonces (`restock 1200 / warn 30`) la ventana es el **2,5 %** del ciclo, así que casi cualquier E
+caía afuera y abría bien; y el panel que había quedado **dibujado** de la expulsión anterior hacía
+que esa apertura correcta se leyera como *«se vuelve a abrir la misma ventana»*. El síntoma era
+real, la causa no estaba donde la buscábamos, y **ninguna de las dos rondas anteriores podía
+distinguirlo porque ningún instrumento decía contra qué estaba midiendo.**
+
+⇒ La falla **16 de la ronda 1** y la **06 de la ronda 2** quedan **cerradas sin parche**. El PARCHE 3
+de la sesión de los seis slices (el re-sorteo con su ventana) pasa a **[APLICADO 2026-08-18]** sin
+la salvedad del +USE.
+
+### Lo que cerró además
+
+- **El aviso, por sus DOS puertas y en los DOS traders.** La nueva:
+  `[Cargo] Sidorovich is restocking. Come back in a moment.` al apretar E con la pantalla cerrada.
+  La vieja: el mismo texto al entrar la ventana con la pantalla abierta. Y el Hawaiano dice lo suyo
+  con su propio nombre —`[Cargo] Hawaiian is restocking…`—, que es la prueba de que el texto sale
+  de **una sola casa** parametrizada y no de dos copias. **PARCHE 1 y PARCHE 2 → [APLICADO].**
+- **El gap por jugador**, con el registro visible: `76561197996735864  0.7` y
+  `jugadores con aviso reciente 1`. Una clave, por SteamID64, con su plazo.
+- **La línea del log del Hawaiano, que no había visto nadie en tres rondas:**
+  `categoría 'food' -> 16 defs registradas, 15 sembradas, 1 excluidas por prefijo, 0 sin value`.
+  Exactamente el criterio, y esta vez desde el LOG y no desde `#ST`.
+- **El re-sorteo NO filtra blobs, medido por IDENTIDAD:** `de 9 anotados siguen vivos 0 | repisa
+  ahora 43`. Es la pregunta que el autor había hecho en la ronda 2 —*«¿está funcionando bien el
+  GC?»*— contestada con una medición y no con una lectura del código. La fila 18 de la ronda 1
+  queda **cerrada**, dos rondas después de que su instrumento fuera reemplazado.
+- **La guarda anti-pisada funcionó en juego:** `YA anotados 9 | borrar: VIEJOS=nil`. El comando que
+  en la ronda 2 destruía su propia línea base ahora se niega.
+- **El reloj arranca al SEMBRAR y no al spawnear**, visible en el arranque de la sonda: `-1` antes
+  de la primera apertura, `89.3` justo después.
+
+### Lo que queda, y es de Cargo
+
+**La expulsión visual.** El autor, en la fila 10: *«lo único que falta es que te expulse de la
+pantalla abierta, así podemos hacer que se cierre la pantalla si el jugador está muy lejos o si el
+trader NPC quiere cerrarla»*. Es **exactamente la entrada #65 de Cargo** (`Trade.CloseFor(ply,
+trader)`) y ahora está **pedida explícitamente por el autor**, no sólo deducida: sube de prioridad
+otra vez. La expulsión de hoy es **funcional** —vaciado el set de viewers, el server contesta «The
+trader is out of reach.»— y el panel queda dibujado hasta que se lo cierra a mano. **Se escribe del
+otro lado** (STK-1); acá no se toca nada. Y el segundo caso que el autor nombra —cerrar la pantalla
+cuando el jugador se aleja— es superficie del mismo accesor y va en el mismo pedido.
+
+### Lo único que no corrió
+
+**La rama sin el pack ARC9 EFT montado**, por tercera ronda y por la misma razón: exige desmontar el
+pack y reiniciar. *«Estoy probando muchísimas cosas al mismo tiempo, lo dejo pendiente.»* **No se
+acredita con nada**: no hay ninguna medición en juego de que el cubo vacío degrade sin romper, sólo
+la de escritorio. El autor anota además su expectativa —que no debería romper, porque el padrón se
+alimenta dinámicamente de las clases `arc9_eft_*`—, y eso es una hipótesis razonable, no una
+medición. **[PENDIENTE]**
