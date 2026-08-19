@@ -181,6 +181,10 @@ if SERVER then
     local PAUSA_VOZ   = 2.5  -- gap mínimo entre líneas ambientales
     local PAUSA_DOLOR = 1.1  -- gap mínimo entre quejidos de daño
     local ALCANCE_USO = 100  -- alcance del +USE por eyetrace (fallback)
+    local PAUSA_AVISO = 6    -- gap POR JUGADOR del aviso en pantalla del +USE
+                             -- bloqueado durante la ventana de cierre. Propio y
+                             -- no PAUSA_VOZ: el texto y el audio se machacan
+                             -- distinto, y uno tapa la pantalla y el otro no.
 
     -- topes y ritmos de la cara
     local YAW_MAX, PITCH_MAX = 60, 25  -- tope del cuello (grados)
@@ -210,6 +214,20 @@ if SERVER then
     local function CargoMod()
         if Corpus == nil or not isfunction(Corpus.GetModule) then return nil end
         return Corpus.GetModule("cargo")
+    end
+
+    -- EL AVISO DE RE-SORTEO TIENE UNA SOLA CASA, y tiene dos llamadores: la
+    -- ventana al ENTRAR (a los que estaban mirando en ese instante) y el +USE
+    -- bloqueado (al que apretó). Que los dos digan lo mismo no puede depender de
+    -- que alguien copie bien el string — un texto que se lee distinto según por
+    -- dónde llegó es un defecto que el código no muestra. Degrada en silencio si
+    -- Cargo no está: devuelve false y nadie se entera, que es lo correcto acá.
+    local function AvisarRestock(ent, ply)
+        local cargo = CargoMod()
+        local noticeFn = cargo and cargo.Inventory and cargo.Inventory.Notice
+        if not isfunction(noticeFn) or not IsValid(ply) then return false end
+        noticeFn(ply, ent.TraderName .. " is restocking. Come back in a moment.")
+        return true
     end
 
     -- ------------------------------------------------------------------
@@ -331,7 +349,8 @@ if SERVER then
     -- Clave de TODO registro por jugador que viva encima de la entidad: el
     -- SteamID64, jamás el Player — el duplicator mergea `ent:GetTable()` entero
     -- (ver el comentario de SidorVozThink). Vale para SidorVoz, SidorSaludados,
-    -- SidorTradeSaludados y SidorTradeHubo, que son las cuatro que hay.
+    -- SidorTradeSaludados, SidorTradeHubo y SidorAvisoUso, que son las cinco
+    -- que hay.
     local function ClaveDe(ply)
         return IsValid(ply) and (ply:SteamID64() or tostring(ply)) or nil
     end
@@ -498,6 +517,7 @@ if SERVER then
         self.SidorSaludados = {}
         self.SidorTradeSaludados = {}
         self.SidorTradeHubo = {}
+        self.SidorAvisoUso = {}
         self.SidorMuerto = false
     end
 
@@ -1101,7 +1121,6 @@ if SERVER then
         self.SidorRestockAvisado = true
 
         local trader = self.CargoTrader
-        local cargo = CargoMod()
 
         -- HAY QUE CAPTURAR LA LISTA ANTES DEL ClearViewers: después ya no hay a
         -- quién avisarle. Se pregunta por la API pública (HasViewer) en vez de
@@ -1128,11 +1147,8 @@ if SERVER then
         -- cliente→server únicamente. Degrada honesto —cualquier acción contesta
         -- "out of reach" y no mueve nada, y la próxima apertura reemplaza el
         -- estado entero y vacía la canasta—, y el aviso explica por qué.
-        local noticeFn = cargo and cargo.Inventory and cargo.Inventory.Notice
-        if isfunction(noticeFn) then
-            for _, ply in ipairs(mirando) do
-                noticeFn(ply, self.TraderName .. " is restocking. Come back in a moment.")
-            end
+        for _, ply in ipairs(mirando) do
+            AvisarRestock(self, ply)
         end
 
         -- Reusa el pool que ya existe (decisión del autor). Hoy `trade_fail`
@@ -1205,8 +1221,35 @@ if SERVER then
         -- DURANTE LA VENTANA DE CIERRE no abre: habla y sale. SIN `forzar`, o
         -- sea respetando PAUSA_VOZ, para que machacar la E no lo vuelva loco.
         -- Esto es de la entidad y no necesita nada de Cargo.
+        --
+        -- Y ADEMÁS SE LO DICE (voto del autor, ronda 2). El aviso de la ventana
+        -- se manda UNA sola vez, al entrar, y sólo a los que estaban mirando en
+        -- ese instante: quien llegaba después —o quien volvía a apretar la E—
+        -- no leía ninguna explicación y sólo veía que no pasaba nada. Con un
+        -- trader mudo (una carpeta de voz vacía) no había NINGUNA señal.
+        -- Tres cosas del cómo, y ninguna es de adorno:
+        --   · gap PROPIO (PAUSA_AVISO) y por jugador, para que machacar la
+        --     tecla no llene la pantalla de texto repetido;
+        --   · la clave es el SteamID64 (ClaveDe) y jamás el Player, como todo
+        --     registro por jugador de este archivo — el duplicator mergea
+        --     `ent:GetTable()` entero;
+        --   · el plazo se valida POR VALOR al leerlo. Uno heredado de un
+        --     savegame quedaría en el futuro para siempre y callaría el aviso
+        --     sin que nada falle, que es exactamente el modo en que este
+        --     archivo ya se rompió una vez (ver PlazoImposible).
         if self:SidorRestockCerrado() then
             self:SidorSpeak("trade_fail")
+
+            local sid = ClaveDe(ply)
+            if sid then
+                self.SidorAvisoUso = self.SidorAvisoUso or {}
+                local prox = self.SidorAvisoUso[sid] or 0
+                if prox > CurTime() + PAUSA_AVISO then prox = 0 end
+                if CurTime() >= prox then
+                    self.SidorAvisoUso[sid] = CurTime() + PAUSA_AVISO
+                    AvisarRestock(self, ply)
+                end
+            end
             return
         end
 
